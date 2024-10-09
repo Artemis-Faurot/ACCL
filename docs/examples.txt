@@ -1,0 +1,17 @@
+def print(message: str): None {
+    log(message);
+};
+
+def add(x: int, y: int): int {
+    return x + y;
+};
+
+let message: str = "Hello, World!";
+let x: int = 5;
+let y: int = 2;
+
+let result: int = add(x, y);
+
+print(message);
+print(str(result));
+exit 0;

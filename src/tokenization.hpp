@@ -4,7 +4,7 @@
 #include <vector>
 #include <optional>
 
-enum class TokenType { _exit, int_lit, semicolon, identifier };
+enum class TokenType { _exit, _let, int_lit, identifier, type, _bool, equals, colon, semicolon, openparen, closeparen };
 
 struct Token {
     TokenType type;
@@ -32,6 +32,18 @@ public:
                     tokens.push_back({ .type = TokenType::_exit });
                     buffer.clear();
                     continue;
+                } else if (buffer == "let") {
+                    tokens.push_back({ .type = TokenType::_let });
+                    buffer.clear();
+                    continue;
+                } else if (buffer == "int" || buffer == "float" || buffer == "char" || buffer == "str" || buffer == "bool") {
+                    tokens.push_back({ .type = TokenType::type, .value = buffer });
+                    buffer.clear();
+                    continue;
+                } else if (buffer == "true" || buffer == "false") {
+                    tokens.push_back({ .type = TokenType::_bool, .value = buffer});
+                    buffer.clear();
+                    continue;
                 } else {
                     tokens.push_back({ .type = TokenType::identifier, .value = buffer });
                     buffer.clear();
@@ -49,8 +61,24 @@ public:
                 consume();
                 tokens.push_back({ .type = TokenType::semicolon });
                 continue;
+            } else if (peek().value() == ':') {
+                consume();
+                tokens.push_back({ .type = TokenType::colon });
+                continue;
             } else if (std::isspace(peek().value())) {
                 consume();
+                continue;
+            } else if (peek().value() == '(') {
+                consume();
+                tokens.push_back({ .type = TokenType::openparen });
+                continue;
+            } else if (peek().value() == ')') {
+                consume();
+                tokens.push_back({ .type = TokenType::closeparen });
+                continue;
+            } else if (peek().value() == '=') {
+                consume();
+                tokens.push_back({ .type = TokenType::equals });
                 continue;
             } else {
                 std::cerr << "Unrecognized character found while lexing: " << peek().value() << std::endl;
@@ -61,11 +89,11 @@ public:
         return tokens;
     }
 private:
-    [[nodiscard]] std::optional<char> peek(int ahead = 1) const {
-        if (m_index + ahead > m_src.length()) {
+    [[nodiscard]] std::optional<char> peek(int offset = 0) const {
+        if (m_index + offset >= m_src.length()) {
             return {};
         } else {
-            return m_src.at(m_index);
+            return m_src.at(m_index + offset);
         }
     }
 

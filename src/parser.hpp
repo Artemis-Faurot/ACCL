@@ -51,11 +51,11 @@ public:
     }
 
 private:
-    [[nodiscard]] std::optional<Token> peek(int ahead = 1) const {
-        if (m_index + ahead > m_tokens.size()) {
+    [[nodiscard]] std::optional<Token> peek(int offset = 0) const {
+        if (m_index + offset >= m_tokens.size()) {
             return {};
         } else {
-            return m_tokens.at(m_index);
+            return m_tokens.at(m_index + offset);
         }
     }
 
