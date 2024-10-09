@@ -1,2 +1,4 @@
 building/
 .vscode/
+CMakeLists.txt
+build.sh
