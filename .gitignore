@@ -1,4 +1,4 @@
-building/
+build/
 .vscode/
 CMakeLists.txt
 build.sh
