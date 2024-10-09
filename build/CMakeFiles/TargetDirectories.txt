@@ -1,3 +1,0 @@
-/home/artemis/Desktop/ACCL/build/CMakeFiles/accl.dir
-/home/artemis/Desktop/ACCL/build/CMakeFiles/edit_cache.dir
-/home/artemis/Desktop/ACCL/build/CMakeFiles/rebuild_cache.dir

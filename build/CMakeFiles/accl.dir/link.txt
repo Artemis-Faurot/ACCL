@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/accl.dir/src/main.cpp.o -o accl 
