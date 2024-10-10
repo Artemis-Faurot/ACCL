@@ -4,7 +4,7 @@
 #include <vector>
 #include <optional>
 
-enum class TokenType { _exit, _let, int_lit, identifier, type, _bool, equals, colon, semicolon, openparen, closeparen };
+enum class TokenType { _exit, _return, _let, _const, _class, _enum, _struct, int_lit, str_lit, identifier, type, _bool, equals, colon, semicolon, openparen, closeparen };
 
 struct Token {
     TokenType type;
@@ -32,8 +32,28 @@ public:
                     tokens.push_back({ .type = TokenType::_exit });
                     buffer.clear();
                     continue;
+                } else if (buffer == "return") {
+                    tokens.push_back({ .type = TokenType::_return });
+                    buffer.clear();
+                    continue;
                 } else if (buffer == "let") {
                     tokens.push_back({ .type = TokenType::_let });
+                    buffer.clear();
+                    continue;
+                } else if (buffer == "const") {
+                    tokens.push_back({ .type = TokenType::_const });
+                    buffer.clear();
+                    continue;
+                } else if (buffer == "class") {
+                    tokens.push_back({ .type = TokenType::_class });
+                    buffer.clear();
+                    continue;
+                } else if (buffer == "enum") {
+                    tokens.push_back({ .type = TokenType::_enum });
+                    buffer.clear();
+                    continue;
+                } else if (buffer == "struct") {
+                    tokens.push_back({ .type = TokenType::_struct });
                     buffer.clear();
                     continue;
                 } else if (buffer == "int" || buffer == "float" || buffer == "char" || buffer == "str" || buffer == "bool") {
@@ -79,6 +99,20 @@ public:
             } else if (peek().value() == '=') {
                 consume();
                 tokens.push_back({ .type = TokenType::equals });
+                continue;
+            } else if (peek().value() == '"' || peek().value() == '\'') {
+                consume();
+                while (peek().has_value() && peek().value() != '"' || peek().has_value() && peek().value() != '\'') {
+                    buffer.push_back(consume());
+                }
+                if (peek().value() == '"' || peek().value() == '\'') {
+                    consume();
+                } else {
+                    std::cerr << "Missing quote at the end of string literal" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                tokens.push_back({ .type = TokenType::str_lit, .value = buffer });
+                buffer.clear();
                 continue;
             } else {
                 std::cerr << "Unrecognized character found while lexing: " << peek().value() << std::endl;
