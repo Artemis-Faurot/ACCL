@@ -9,8 +9,16 @@ namespace Node {
         Token int_lit;
     };
 
+    struct ExprFloatLit {
+        Token float_lit;
+    };
+
     struct ExprStrLit {
         Token str_lit;
+    };
+
+    struct ExprBoolLit {
+        Token _bool;
     };
 
     struct ExprType {
@@ -22,7 +30,7 @@ namespace Node {
     };
 
     struct Expr {
-        std::variant<ExprIntLit, ExprStrLit, ExprType, ExprIdent> var;
+        std::variant<ExprIntLit, ExprFloatLit, ExprStrLit, ExprBoolLit, ExprType, ExprIdent> var;
     };
 
     struct StmtExit {
@@ -31,11 +39,19 @@ namespace Node {
 
     struct StmtLet {
         Token ident;
+        Token type;
         Expr expr;
     };
 
+    struct StmtDef {
+        Token ident;
+        std::vector<Expr> exprs;
+        Token type;
+        std::vector<Stmt> stmts;
+    };
+
     struct Stmt {
-        std::variant<StmtExit, StmtLet> var;
+        std::variant<StmtExit, StmtLet, StmtDef> var;
     };
 
     struct Program {
@@ -84,14 +100,26 @@ public:
             }
 
             return Node::Stmt { .var = stmt_exit };
-        } else if (peek().has_value() && peek().value().type == TokenType::_let
-                    && peek(1).has_value() && peek(1).value().type == TokenType::identifier
-                    && peek(2).has_value() && peek(2).value().type == TokenType::colon
-                    && peek(3).has_value() && peek(2).value().type == TokenType::type
-                    && peek(4).has_value() && peek(4).value().type == TokenType::equals) {
+        } else if (peek().has_value() && peek().value().type == TokenType::_let) {
             consume();
-            
             Node::StmtLet stmt_let;
+            if (peek().has_value() && peek().value().type == TokenType::identifier) {
+                
+            } else {
+                std::cerr << "Expected variable name after let call" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            if (peek().has_value() && peek().value().type == TokenType::colon) {
+                consume();
+            } else {
+                std::cerr << "Expected : after variable name" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            if (peek().has_value() && peek().value().type == TokenType::type) {
+
+            }
         }
     }
 

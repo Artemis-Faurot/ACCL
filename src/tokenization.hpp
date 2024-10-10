@@ -4,7 +4,27 @@
 #include <vector>
 #include <optional>
 
-enum class TokenType { _exit, _return, _let, _const, _class, _enum, _struct, int_lit, str_lit, identifier, type, _bool, equals, colon, semicolon, openparen, closeparen };
+enum class TokenType { 
+    _exit, 
+    _def, 
+    _return, 
+    _let, 
+    _const, 
+    _class, 
+    _enum, 
+    _struct, 
+    int_lit,
+    float_lit,
+    str_lit, 
+    identifier, 
+    type, 
+    _bool, 
+    equals, 
+    colon, 
+    semicolon, 
+    openparen, 
+    closeparen 
+};
 
 struct Token {
     TokenType type;
@@ -32,6 +52,8 @@ public:
                     tokens.push_back({ .type = TokenType::_exit });
                     buffer.clear();
                     continue;
+                } else if (buffer == "def") {
+                    tokens.push_back({ .type = TokenType::_def });
                 } else if (buffer == "return") {
                     tokens.push_back({ .type = TokenType::_return });
                     buffer.clear();
@@ -70,11 +92,25 @@ public:
                     continue;
                 }
             } else if (std::isdigit(peek().value())) {
+                bool isfloat = false;
                 buffer.push_back(consume());
-                while (peek().has_value() && std::isdigit(peek().value())) {
-                    buffer.push_back(consume());
+                while (peek().has_value() && std::isdigit(peek().value()) ||
+                        peek().has_value() && peek().value() == '.') {
+                    if (peek().value() == '.' && !isfloat) {
+                        isfloat = true;
+                        buffer.push_back(consume());
+                    } else if (peek().value() == '.' && isfloat) {
+                        std::cerr << "Float value cannot contain a second ." << std::endl;
+                        exit(EXIT_FAILURE);
+                    } else {
+                        buffer.push_back(consume());
+                    }
                 }
-                tokens.push_back({ .type = TokenType::int_lit, .value = buffer });
+                if (isfloat) {
+                    tokens.push_back({ .type = TokenType::float_lit, .value = buffer });
+                } else {
+                    tokens.push_back({ .type = TokenType::int_lit, .value = buffer });
+                }
                 buffer.clear();
                 continue;
             } else if (peek().value() == ';') {
@@ -100,22 +136,23 @@ public:
                 consume();
                 tokens.push_back({ .type = TokenType::equals });
                 continue;
-            } else if (peek().value() == '"' || peek().value() == '\'') {
-                consume();
-                while (peek().has_value() && peek().value() != '"' || peek().has_value() && peek().value() != '\'') {
+            } else if (peek().value() == '"') {
+                buffer.push_back('\\' + consume());
+                while (peek().has_value() && peek().value() != '"') {
                     buffer.push_back(consume());
                 }
-                if (peek().value() == '"' || peek().value() == '\'') {
-                    consume();
+                
+                if (peek().value() == '"') {
+                    buffer.push_back('\\' + consume());
                 } else {
-                    std::cerr << "Missing quote at the end of string literal" << std::endl;
+                    std::cerr << "Expected \" to end string" << std::endl;
                     exit(EXIT_FAILURE);
                 }
-                tokens.push_back({ .type = TokenType::str_lit, .value = buffer });
+                tokens.push_back({ .type = TokenType::str_lit, .value = buffer});
                 buffer.clear();
                 continue;
             } else {
-                std::cerr << "Unrecognized character found while lexing: " << peek().value() << std::endl;
+                std::cerr << "Found unrecognized character while lexing" << std::endl;
                 exit(EXIT_FAILURE);
             }
         }
