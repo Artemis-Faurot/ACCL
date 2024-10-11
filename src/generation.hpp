@@ -6,25 +6,33 @@
 
 class Generator {
 public:
-    inline Generator(NodeExit root):
-        m_root(std::move(root))
+    inline Generator(Node::Program program):
+        m_program(std::move(program))
     {
 
     }
 
-    [[nodiscard]] std::string generate() const {
+    [[nodiscard]] std::string gen_program() const {
         std::stringstream output;
-        output << "section .text\n";
-        output << "    global _start\n\n";
+        std::stringstream text;
+        std::stringstream read;
+        std::stringstream bss;
+        text << "section .text\n";
+        text << "    global _start\n\n";
 
-        output << "_start:\n";
-        output << "    mov rax, 1\n";
-        output << "    mov rbx, " << m_root.expr.int_lit.value.value() << "\n";
-        output << "    int 0x80";
+        text << "_start:\n";
+
+        for (const Node::Stmt& stmt : m_program.stmts) {
+            
+        }
+
+        text << "    mov rax, 1\n";
+        text << "    mov rbx, 0\n";
+        text << "    int 0x80";
         return output.str();
     }
 
 private:
-    const NodeExit m_root;
+    const Node::Program m_program;
 
 };

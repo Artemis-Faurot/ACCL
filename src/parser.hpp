@@ -5,32 +5,13 @@
 #include "./tokenization.hpp"
 
 namespace Node {
-    struct ExprIntLit {
-        Token int_lit;
-    };
-
-    struct ExprFloatLit {
-        Token float_lit;
-    };
-
-    struct ExprStrLit {
-        Token str_lit;
-    };
-
-    struct ExprBoolLit {
-        Token _bool;
-    };
-
-    struct ExprType {
-        Token type;
-    };
-
-    struct ExprIdent {
-        Token ident;
-    };
-
     struct Expr {
-        std::variant<ExprIntLit, ExprFloatLit, ExprStrLit, ExprBoolLit, ExprType, ExprIdent> var;
+        std::optional<Token> int_lit;
+        std::optional<Token> float_lit;
+        std::optional<Token> str_lit;
+        std::optional<Token> _bool;
+        std::optional<Token> type;
+        std::optional<Token> ident;
     };
 
     struct StmtExit {
@@ -39,14 +20,14 @@ namespace Node {
 
     struct StmtLet {
         Token ident;
-        Token type;
+        Expr type;
         Expr expr;
     };
 
     struct StmtDef {
         Token ident;
         std::vector<Expr> exprs;
-        Token type;
+        Expr type;
         std::vector<Stmt> stmts;
     };
 
@@ -69,14 +50,18 @@ public:
 
     std::optional<Node::Expr> parse_expr() {
         if (peek().has_value() && peek().value().type == TokenType::int_lit) {
-            return Node::Expr { .var = Node::ExprIntLit { .int_lit = consume() } };
+            return Node::Expr { .int_lit = consume() };
+        } else if (peek().has_value() && peek().value().type == TokenType::float_lit) {
+            return Node::Expr { .float_lit = consume() };
         } else if (peek().has_value() && peek().value().type == TokenType::str_lit) {
-            return Node::Expr { .var = Node::ExprStrLit { .str_lit = consume() } };
-        } else if (peek().has_value() && peek().value().type == TokenType::identifier) {
-            return Node::Expr { .var = Node::ExprIdent { .ident = consume() } };
+            return Node::Expr { .str_lit = consume() };
+        } else if (peek().has_value() && peek().value().type == TokenType::_bool) {
+            return Node::Expr { ._bool = consume() };
         } else if (peek().has_value() && peek().value().type == TokenType::type) {
-            return Node::Expr { .var = Node::ExprType { .type = consume() } };
-        } else {
+            return Node::Expr { .type = consume() };
+        } else if (peek().has_value() && peek().value().type == TokenType::identifier) {
+            return Node::Expr { .ident = consume() };
+        }  else {
             return {};
         }
     }
@@ -104,23 +89,77 @@ public:
             consume();
             Node::StmtLet stmt_let;
             if (peek().has_value() && peek().value().type == TokenType::identifier) {
-                
+                stmt_let = Node::StmtLet { .ident = consume() };
             } else {
-                std::cerr << "Expected variable name after let call" << std::endl;
+                std::cerr << "Expected an identifier after let declaration" << std::endl;
                 exit(EXIT_FAILURE);
             }
 
-            if (peek().has_value() && peek().value().type == TokenType::colon) {
-                consume();
-            } else {
-                std::cerr << "Expected : after variable name" << std::endl;
+            if (!peek().has_value() || peek().value().type != TokenType::colon) {
+                std::cerr << "Expected a colon to type the identifier" << std::endl;
                 exit(EXIT_FAILURE);
+            } else {
+                consume();
             }
+
+            std::optional<std::string> held_type;
 
             if (peek().has_value() && peek().value().type == TokenType::type) {
+                auto type = parse_expr();
+                held_type = type.value().type.value().value;
+                stmt_let = Node::StmtLet { .ident = stmt_let.ident, .type = type.value() };
+            } else {
+                std::cerr << "Expected a type identifier" << std::endl;
+                exit(EXIT_FAILURE);
+            }
 
+            if (!peek().has_value() || peek().value().type != TokenType::equals) {
+                std::cerr << "Expected a = to set variable" << std::endl;
+                exit(EXIT_FAILURE);
+            } else {
+                consume();
+            }
+
+            if (peek().has_value()) {
+                auto expr = parse_expr();
+                if (held_type == "int" && expr.value().int_lit ||
+                    held_type == "float" && expr.value().float_lit ||
+                    held_type == "str" && expr.value().str_lit ||
+                    held_type == "bool" && expr.value()._bool) {
+                    stmt_let.expr = expr.value();
+                } else {
+                    std::cerr << "Data type mismatch on variable declaration" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+            } else {
+                std::cerr << "Invalid expression" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            if (!peek().has_value() || peek().value().type != TokenType::semicolon) {
+                std::cerr << "Expected a semicolon after expression" << std::endl;
+                exit(EXIT_FAILURE);
+            } else {
+                consume();
+            }
+
+            return Node::Stmt { .var = stmt_let };
+        } else {
+            return {};
+        }
+    }
+
+    std::optional<Node::Program> parse_prog() {
+        Node::Program program;
+        while (peek().has_value()) {
+            if (auto stmt = parse_stmt()) {
+                program.stmts.push_back(stmt.value());
+            } else {
+                std::cerr << "Invalid statement" << std::endl;
+                exit(EXIT_FAILURE);
             }
         }
+        return program;
     }
 
 private:

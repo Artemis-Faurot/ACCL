@@ -1,11 +1,13 @@
 $$
 \begin{align}
-    [\text{prog}] &\to [\text{stmt}]^* \\
+    [\text{prog}] &\to \text{[stmt]*} \\
     [\text{stmt}] &\to
     \begin{cases}
-        \text{exit [expr]}; \\
-        \text{let identifier: type = [expr]}; \\
-        \text{def identifier([expr]*): type \{[stmt*]\}}; \\
+        \text{exit [expr];} \\
+        \text{let identifier: type = [expr];} \\
+        \text{def identifier([expr]*): type \{[stmt*]\};} \\
+
+        \\ \text{return [expr];}
     \end{cases} \\
     [\text{expr}] &\to
     \begin{cases}
