@@ -44,15 +44,8 @@ namespace Node {
         Expr expr;
     };
 
-    struct StmtDef {
-        Token ident;
-        std::vector<Expr> exprs;
-        Expr type;
-        std::vector<Stmt> stmts;
-    };
-
     struct Stmt {
-        std::variant<StmtExit, StmtLet, StmtDef> var;
+        std::variant<StmtExit, StmtLet> var;
     };
 
     struct Program {
@@ -142,22 +135,19 @@ public:
 
             if (peek().has_value()) {
                 auto expr = parse_expr();
-                if (held_type == "int" && std::is_same<decltype(expr.value().var),  Node::ExprIntLit>::value ||
-                    held_type == "float" && std::is_same<decltype(expr.value().var), Node::ExprFloatLit>::value ||
-                    held_type == "str" && std::is_same<decltype(expr.value().var), Node::ExprStrLit>::value ||
-                    held_type == "bool" && std::is_same<decltype(expr.value().var), Node::ExprBool>::value) {
+                if (std::is_same<decltype(expr.value().var),  Node::ExprIntLit>::value) {
                     stmt_let.expr = expr.value();
                 } else {
                     std::cerr << "Data type mismatch on variable declaration" << std::endl;
                     exit(EXIT_FAILURE);
                 }
             } else {
-                std::cerr << "Invalid expression" << std::endl;
+                std::cerr << "Expected value to be assigned to the variable" << std::endl;
                 exit(EXIT_FAILURE);
             }
 
             if (!peek().has_value() || peek().value().type != TokenType::semicolon) {
-                std::cerr << "Expected a semicolon after expression" << std::endl;
+                std::cerr << "Expected a semicolon to end let statement" << std::endl;
                 exit(EXIT_FAILURE);
             } else {
                 consume();
