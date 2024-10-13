@@ -24,7 +24,7 @@ namespace Node {
 
     struct StmtLet {
         Token ident;
-        Expr type;
+        Token type;
         Expr expr;
     };
 
@@ -93,8 +93,7 @@ public:
 
             if (peek().has_value() && peek().value().type == TokenType::type) {
                 held_type = peek().value().value;
-                auto type = parse_expr();
-                stmt_let = Node::StmtLet { .ident = stmt_let.ident, .type = type.value() };
+                stmt_let = Node::StmtLet { .ident = stmt_let.ident, .type = consume() };
             } else {
                 std::cerr << "Expected a type identifier" << std::endl;
                 exit(EXIT_FAILURE);
