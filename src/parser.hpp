@@ -10,18 +10,6 @@ namespace Node {
         Token int_lit;
     };
 
-    struct ExprFloatLit {
-        Token float_lit;
-    };
-
-    struct ExprStrLit {
-        Token str_lit;
-    };
-
-    struct ExprBool {
-        Token _bool;
-    };
-
     struct ExprType {
         Token type;
     };
@@ -31,7 +19,7 @@ namespace Node {
     };
 
     struct Expr {
-        std::variant<ExprIntLit, ExprFloatLit, ExprStrLit, ExprBool, ExprType, ExprIdentifier> var;
+        std::variant<ExprIntLit, ExprType, ExprIdentifier> var;
     };
 
     struct StmtExit {
@@ -64,12 +52,6 @@ public:
     std::optional<Node::Expr> parse_expr() {
         if (peek().has_value() && peek().value().type == TokenType::int_lit) {
             return Node::Expr { .var = Node::ExprIntLit { .int_lit = consume() } };
-        } else if (peek().has_value() && peek().value().type == TokenType::float_lit) {
-            return Node::Expr { .var = Node::ExprFloatLit { .float_lit = consume() } };
-        } else if (peek().has_value() && peek().value().type == TokenType::str_lit) {
-            return Node::Expr { .var = Node::ExprStrLit { .str_lit = consume() } };
-        } else if (peek().has_value() && peek().value().type == TokenType::_bool) {
-            return Node::Expr { .var = Node::ExprBool { ._bool = consume() } };
         } else if (peek().has_value() && peek().value().type == TokenType::type) {
             return Node::Expr { .var = Node::ExprType { .type = consume() } };
         } else if (peek().has_value() && peek().value().type == TokenType::identifier) {
@@ -111,9 +93,7 @@ public:
             if (!peek().has_value() || peek().value().type != TokenType::colon) {
                 std::cerr << "Expected a colon to type the identifier" << std::endl;
                 exit(EXIT_FAILURE);
-            } else {
-                consume();
-            }
+            } consume();
 
             std::optional<std::string> held_type;
 
@@ -129,13 +109,11 @@ public:
             if (!peek().has_value() || peek().value().type != TokenType::equals) {
                 std::cerr << "Expected a = to set variable" << std::endl;
                 exit(EXIT_FAILURE);
-            } else {
-                consume();
-            }
+            } consume();
 
             if (peek().has_value()) {
                 auto expr = parse_expr();
-                if (std::is_same<decltype(expr.value().var),  Node::ExprIntLit>::value) {
+                if (held_type == "int" && std::holds_alternative<Node::ExprIntLit>(expr.value().var)) {
                     stmt_let.expr = expr.value();
                 } else {
                     std::cerr << "Data type mismatch on variable declaration" << std::endl;
@@ -149,9 +127,7 @@ public:
             if (!peek().has_value() || peek().value().type != TokenType::semicolon) {
                 std::cerr << "Expected a semicolon to end let statement" << std::endl;
                 exit(EXIT_FAILURE);
-            } else {
-                consume();
-            }
+            } consume();
 
             return Node::Stmt { .var = stmt_let };
         } else {

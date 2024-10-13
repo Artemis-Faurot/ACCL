@@ -5,16 +5,10 @@ $$
     \begin{cases}
         \text{exit [expr];} \\
         \text{let identifier: type = [expr];} \\
-        \text{def identifier([expr]*): type \{[stmt*]\};} \\
-
-        \\ \text{return [expr];}
     \end{cases} \\
     [\text{expr}] &\to
     \begin{cases}
         \text{int\_lit} \\
-        \text{float\_lit} \\
-        \text{str\_lit} \\
-        \text{bool} \\
         \text{type} \\
         \text{identifier} \\
     \end{cases} \\

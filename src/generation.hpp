@@ -18,18 +18,6 @@ public:
                 gen->push("rbx");
             }
 
-            void operator()(const Node::ExprFloatLit& expr_float_lit) const {
-
-            }
-
-            void operator()(const Node::ExprStrLit& expr_str_lit) const {
-
-            }
-
-            void operator()(const Node::ExprBool& expr_bool) const {
-
-            }
-
             void operator()(const Node::ExprType& expr_type) const {
 
             }
@@ -76,7 +64,7 @@ public:
     }
 
     [[nodiscard]] std::string gen_prog() {
-        m_output << "section .text\n";
+        m_output << "\nsection .text\n";
         m_output << "    global _start\n\n";
 
         m_output << "_start:\n";
