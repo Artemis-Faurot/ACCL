@@ -18,10 +18,6 @@ public:
                 gen->push("rbx");
             }
 
-            void operator()(const Node::ExprType& expr_type) const {
-
-            }
-
             void operator()(const Node::ExprIdentifier& expr_identifier) const {
                 if(gen->m_vars.find(expr_identifier.identifier.value.value()) == gen->m_vars.end()) {
                     std::cerr << "Undeclared identifier: " << expr_identifier.identifier.value.value() << std::endl;
@@ -29,7 +25,7 @@ public:
                 }
                 const auto& var = gen->m_vars.at(expr_identifier.identifier.value.value());
                 std::stringstream offset;
-                offset << "QWORD [rsp + " << (gen->m_stack_size - var.stack_loc - 1) * 8 << "]\n";
+                offset << "QWORD [rsp + " << (gen->m_stack_size - var.stack_loc - 1) * 8 << "]";
                 gen->push(offset.str());
             }
         };
@@ -45,7 +41,7 @@ public:
                 gen->gen_expr(stmt_exit.expr);
                 gen->m_output << "    mov rax, 1\n";
                 gen->pop("rbx");
-                gen->m_output << "    int 0x80\n";
+                gen->m_output << "    int 0x80\n\n";
             }
 
             void operator()(const Node::StmtLet& stmt_let) const {
@@ -64,7 +60,7 @@ public:
     }
 
     [[nodiscard]] std::string gen_prog() {
-        m_output << "\nsection .text\n";
+        m_output << "section .text\n";
         m_output << "    global _start\n\n";
 
         m_output << "_start:\n";
@@ -74,13 +70,13 @@ public:
 
         m_output << "    mov rax, 1\n";
         m_output << "    mov rbx, 0\n";
-        m_output << "    int 0x80\n";
+        m_output << "    int 0x80\n\n";
         return m_output.str();
     }
 
 private:
     void push(const std::string& reg) {
-        m_output << "    push " << reg << "\n";
+        m_output << "    push " << reg << "\n\n";
         m_stack_size++;
     }
 

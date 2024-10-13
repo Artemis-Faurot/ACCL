@@ -10,16 +10,12 @@ namespace Node {
         Token int_lit;
     };
 
-    struct ExprType {
-        Token type;
-    };
-
     struct ExprIdentifier {
         Token identifier;
     };
 
     struct Expr {
-        std::variant<ExprIntLit, ExprType, ExprIdentifier> var;
+        std::variant<ExprIntLit, ExprIdentifier> var;
     };
 
     struct StmtExit {
@@ -52,8 +48,6 @@ public:
     std::optional<Node::Expr> parse_expr() {
         if (peek().has_value() && peek().value().type == TokenType::int_lit) {
             return Node::Expr { .var = Node::ExprIntLit { .int_lit = consume() } };
-        } else if (peek().has_value() && peek().value().type == TokenType::type) {
-            return Node::Expr { .var = Node::ExprType { .type = consume() } };
         } else if (peek().has_value() && peek().value().type == TokenType::identifier) {
             return Node::Expr { .var = Node::ExprIdentifier { .identifier = consume() } };
         }  else {

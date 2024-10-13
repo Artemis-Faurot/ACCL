@@ -9,8 +9,13 @@ $$
     [\text{expr}] &\to
     \begin{cases}
         \text{int\_lit} \\
-        \text{type} \\
         \text{identifier} \\
+        \text{[binary\_expr]} \\
+    \end{cases} \\
+    [\text{binary\_expr}] &\to
+    \begin{cases}
+        \text{[expr] * or / [expr] prec = 1} \\
+        \text{[expr] + or - [expr] prec = 0} \\
     \end{cases} \\
 \end{align}
 $$

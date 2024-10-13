@@ -1,2 +1,2 @@
-let x: int = 8;
+let x: int = 12;
 exit x;
