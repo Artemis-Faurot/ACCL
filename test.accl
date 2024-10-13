@@ -1,2 +1,5 @@
-let x: int = 13;
-exit x;
+let x: int = 4;
+let y: int = 8;
+let z: int = 12;
+
+exit y;

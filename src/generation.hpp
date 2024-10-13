@@ -14,8 +14,8 @@ public:
         struct ExprVisitor {
             Generator* gen;
             void operator()(const Node::ExprIntLit& expr_int_lit) const {
-                gen->m_output << "    mov rbx, " << expr_int_lit.int_lit.value.value() << "\n";
-                gen->push("rbx");
+                gen->m_output << "    mov rax, " << expr_int_lit.int_lit.value.value() << "\n";
+                gen->push("rax");
             }
 
             void operator()(const Node::ExprIdentifier& expr_identifier) const {
@@ -39,9 +39,9 @@ public:
             Generator* gen;
             void operator()(const Node::StmtExit& stmt_exit) const {
                 gen->gen_expr(stmt_exit.expr);
-                gen->m_output << "    mov rax, 1\n";
-                gen->pop("rbx");
-                gen->m_output << "    int 0x80\n\n";
+                gen->m_output << "    mov rax, 60\n";
+                gen->pop("rdi");
+                gen->m_output << "    syscall\n\n";
             }
 
             void operator()(const Node::StmtLet& stmt_let) const {
@@ -68,9 +68,9 @@ public:
             gen_stmt(stmt);
         }
 
-        m_output << "    mov rax, 1\n";
-        m_output << "    mov rbx, 0\n";
-        m_output << "    int 0x80\n\n";
+        m_output << "    mov rax, 60\n";
+        m_output << "    mov rdi, 0\n";
+        m_output << "    syscall\n\n";
         return m_output.str();
     }
 
