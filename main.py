@@ -3,10 +3,8 @@ from accl_parser import Parser, NodeProgram
 from accl_tokenizer import Tokenizer, Token
 import sys
 
-debug: bool = True
-
-if debug:
-    sys.argv.append("./file.accl")
+debug: bool = False
+if debug: sys.argv.append("./file.accl")
 
 def main():
     if len(sys.argv) != 2:
@@ -17,8 +15,12 @@ def main():
     tokenizer: Tokenizer = Tokenizer(contents)
     tokens: list[Token] = tokenizer.tokenize()
 
+    if debug: print(tokens)
+
     parser: Parser = Parser(tokens)
     program: NodeProgram or None = parser.parse_program() # type: ignore
+
+    if debug: print(program)
 
     if not program:
         raise Exception("Invalid program")
