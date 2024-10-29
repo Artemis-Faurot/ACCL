@@ -4,7 +4,7 @@ from accl_tokenizer import Tokenizer, Token
 import sys
 
 debug: bool = False
-if debug: sys.argv.append("./file.accl")
+if debug: sys.argv.append("/home/artemis/Desktop/ACCL/file.accl")
 
 def main():
     if len(sys.argv) != 2:

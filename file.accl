@@ -2,4 +2,4 @@ let x: int = 4;
 let y: int = 8;
 let z: int = 6;
 
-exit x;
+exit y;
