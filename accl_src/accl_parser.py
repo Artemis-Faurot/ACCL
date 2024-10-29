@@ -87,11 +87,11 @@ class NodeStmtDef:
     def __repr__(self):
         return f"NodeStmtDef:\n\tidentifier: {self.identifier}\n\tparameters: {self.parameters}\n\treturn type: {self.returnType}\n\tstmts: {self.stmts}\n"
 class NodeStmtPrint:
-    def __init__(self, item_list: list[NodeExpr]):
-        self.item_list: list[NodeExpr] = item_list
+    def __init__(self, expr: NodeExpr):
+        self.expr: NodeExpr = expr
 
     def __repr__(self):
-        return f"NodeStmtPrint:\n\tmsg: {self.item_list}\n"
+        return f"NodeStmtPrint:\n\texpr: {self.expr}\n"
 class NodeStmt:
     def __init__(self, var: Union['NodeStmtExit',
             'NodeStmtReturn',
@@ -187,20 +187,17 @@ class Parser:
             self.consume()
             self.expect(token= TokenType.OpenParen, errmessage= "Expected ( to begin print statement")
 
-            item_list: list[NodeExpr] = []
-            while self.peek() and self.peek().Type != TokenType.CloseParen:
-                item_list.append(self.parse_expr())
-                if self.peek().Type != TokenType.Comma and self.peek().Type != TokenType.CloseParen:
-                    raise Exception("Must have commas between expressions")
-                elif self.peek().Type == TokenType.Comma:
-                    self.consume()
+            stmt_print = None
+            if self.peek().Type != TokenType.CloseParen:
+                node_expr: NodeExpr = self.parse_expr()
+                stmt_print = NodeStmtPrint(expr= node_expr)
 
             self.expect(token=TokenType.CloseParen, errmessage="Expected ) to close print statement")
-
-            stmt_print: NodeStmtPrint = NodeStmtPrint(item_list= item_list)
-
             self.expect(token= TokenType.Semicolon, errmessage= "Expected ; to end print statement")
-            return NodeStmt(var= stmt_print)
+            if stmt_print:
+                return NodeStmt(var= stmt_print)
+            else:
+                return None
 
     def parse_program(self):
         program: NodeProgram = NodeProgram(stmts=[])

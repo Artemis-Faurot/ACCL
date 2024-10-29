@@ -1,5 +1,5 @@
 from accl_parser import NodeProgram, NodeStmt, NodeExpr, NodeExprIntLit, NodeStmtExit, NodeStmtLet, NodeExprIdentifier, \
-    NodeExprFloatLit, NodeExprCharLit, NodeExprStrLit, NodeExprBoolLit
+    NodeExprFloatLit, NodeExprCharLit, NodeExprStrLit, NodeExprBoolLit, NodeStmtPrint
 import io
 
 class Var:
@@ -16,6 +16,7 @@ class Generator:
         self.output = io.StringIO()
 
         self.stack_size: int = 0
+        self.string_amount: int = 0
         self.vars: list = []
 
     # Expr visitors
@@ -30,10 +31,19 @@ class Generator:
         ... # TODO VISIT_EXPR_CHAR_LIT
 
     def visit_expr_str_lit(self, expr_str_lit: NodeExprStrLit):
-        ... # TODO VISIT_EXPR_STR_LIT
+        string_value = expr_str_lit.str_lit.Value
+        label = f"string_{self.string_amount}"
+        self.string_amount += 1
+
+        self.data.write(f'    {label} db "{string_value}", 0xa, 0\n')
+        self.text.write(f"    lea rax, [{label}]\n")
+        self.push("rax")
 
     def visit_expr_bool_lit(self, expr_bool_lit: NodeExprBoolLit):
-        ... # TODO VISIT_EXPR_BOOL_LIT
+        if expr_bool_lit.bool_lit.Value == "True": psh: str = "1"
+        else: psh: str = "0"
+        self.text.write(f"    mov rax, {psh}\n")
+        self.push("rax")
 
     def visit_expr_identifier(self, expr_identifier: NodeExprIdentifier):
         isin: bool = False
@@ -42,7 +52,7 @@ class Generator:
                 isin = True
                 var: Var = Var(i)
                 offset: str = f"QWORD [rsp + {(self.stack_size - var.stackloc - 1) * 8}]"
-                self.push(str(offset))
+                self.push(offset)
         if isin is False:
             raise ValueError(f"Undeclared Identifier: {expr_identifier.identifier.Value}")
 
@@ -59,15 +69,28 @@ class Generator:
         self.vars.append([stmt_let.identifier.Value,Var(stackloc= self.stack_size)])
         self.gen_expr(stmt_let.expr)
 
+    def visit_stmt_print(self, stmt_print: NodeStmtPrint):
+        self.gen_expr(stmt_print.expr)
+        self.pop("rsi")
+
+        self.text.write("    call length_function\n")
+
+        self.text.write("    mov rax, 1\n")
+        self.text.write("    mov rdi, 1\n")
+        self.text.write("    syscall\n\n")
+
     # Visitor Dictionaries
     expr_visitor: dict = {
         'NodeExprIntLit': visit_expr_int_lit,
+        'NodeExprStrLit': visit_expr_str_lit,
+        'NodeExprBoolLit': visit_expr_bool_lit,
         'NodeExprIdentifier': visit_expr_identifier
     }
 
     stmt_visitor: dict = {
         'NodeStmtExit': visit_stmt_exit,
-        'NodeStmtLet' : visit_stmt_let
+        'NodeStmtLet' : visit_stmt_let,
+        'NodeStmtPrint' : visit_stmt_print
     }
 
     # Generators
@@ -88,6 +111,20 @@ class Generator:
         self.text.write("    mov rax, 60\n")
         self.text.write("    mov rdi, 0\n")
         self.text.write("    syscall\n\n")
+
+        self.text.write("length_function:\n")
+        self.text.write("    xor rdx, rdx\n")
+        self.text.write("    mov rdx, 0\n\n")
+
+        self.text.write("length_loop:\n")
+        self.text.write("    cmp byte [rsi + rdx], 0\n")
+        self.text.write("    je done_length\n")
+        self.text.write("    inc rdx \n")
+        self.text.write("    jmp length_loop\n\n")
+
+        self.text.write("done_length:\n")
+        self.text.write("    mov rax, rdx\n")
+        self.text.write("    ret")
 
         self.output.write(self.data.getvalue())
         self.output.write(self.text.getvalue())
