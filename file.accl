@@ -1,4 +1,0 @@
-let string: str = "Hello, World!";
-
-print(string);
-exit 9;
