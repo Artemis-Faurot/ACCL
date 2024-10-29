@@ -16,7 +16,9 @@ class Generator:
         self.output = io.StringIO()
 
         self.stack_size: int = 0
+        self.float_amount: int = 0
         self.string_amount: int = 0
+        self.char_amount: int = 0
         self.vars: list = []
 
     # Expr visitors
@@ -25,10 +27,21 @@ class Generator:
         self.push("rax")
 
     def visit_expr_float_lit(self, expr_float_lit: NodeExprFloatLit):
-        ... # TODO VISIT_EXPR_FLOAT_LIT
+        label = f"float_{self.float_amount}"
+        self.float_amount += 1
+
+        self.data.write(f"    {label}: dq {expr_float_lit.float_lit.Value}\n")
+        self.text.write(f"    mov rax, qword [{label}]\n")
+        self.push_float("rax")
 
     def visit_expr_char_let(self, expr_char_lit: NodeExprCharLit):
-        ... # TODO VISIT_EXPR_CHAR_LIT
+        char_value = expr_char_lit.char_lit.Value
+        label = f"char_{self.char_amount}"
+        self.char_amount += 1
+
+        self.data.write(f'    {label} db "{char_value}", Oxa, 0\n')
+        self.text.write(f"    lea rax, [{label}]\n")
+        self.push("rax")
 
     def visit_expr_str_lit(self, expr_str_lit: NodeExprStrLit):
         string_value = expr_str_lit.str_lit.Value
@@ -70,18 +83,25 @@ class Generator:
         self.gen_expr(stmt_let.expr)
 
     def visit_stmt_print(self, stmt_print: NodeStmtPrint):
+        expr_type = type(stmt_print.expr.var).__name__
         self.gen_expr(stmt_print.expr)
         self.pop("rsi")
 
-        self.text.write("    call length_function\n")
-
-        self.text.write("    mov rax, 1\n")
-        self.text.write("    mov rdi, 1\n")
-        self.text.write("    syscall\n\n")
+        if expr_type == 'NodeExprIntLit':
+            pass
+        elif expr_type == 'NodeExprFloatLit':
+            pass
+        elif expr_type == 'NodeExprCharLit':
+            pass
+        elif expr_type == 'NodeExprStrLit':
+            pass
+        elif expr_type == 'NodeExprBoolLit':
+            pass
 
     # Visitor Dictionaries
     expr_visitor: dict = {
         'NodeExprIntLit': visit_expr_int_lit,
+        'NodeExprFloatLit': visit_expr_float_lit,
         'NodeExprStrLit': visit_expr_str_lit,
         'NodeExprBoolLit': visit_expr_bool_lit,
         'NodeExprIdentifier': visit_expr_identifier
@@ -124,7 +144,7 @@ class Generator:
 
         self.text.write("done_length:\n")
         self.text.write("    mov rax, rdx\n")
-        self.text.write("    ret")
+        self.text.write("    ret\n\n")
 
         self.output.write(self.data.getvalue())
         self.output.write(self.text.getvalue())
@@ -138,3 +158,7 @@ class Generator:
     def pop(self, reg: str):
         self.text.write(f"    pop {reg}\n")
         self.stack_size -= 1
+    def push_float(self, reg: str):
+        self.text.write(f"    sub rsp, 8\n")
+        self.text.write(f"    movsd qword [rsp], {reg}\n")
+        self.stack_size += 1
