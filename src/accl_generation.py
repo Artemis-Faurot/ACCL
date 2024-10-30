@@ -1,6 +1,6 @@
 from accl_parser import NodeProgram, NodeStmt, NodeExpr, NodeExprIntLit, NodeStmtExit, NodeStmtLet, NodeExprIdentifier, \
     NodeExprFloatLit, NodeExprCharLit, NodeExprStrLit, NodeExprFStrLit, NodeExprBoolLit, NodeStmtPrint, NodeStmtDef, \
-    NodeStmtReassignment, NodeStmtIf, NodeStmtWhile, NodeStmtFor
+    NodeStmtReassignment, NodeStmtIf, NodeStmtWhile, NodeStmtFor, NodeStmtInclude, NodeStmtReturn
 import io
 
 class Var:
@@ -86,8 +86,8 @@ class Generator:
         self.text.write("    syscall\n\n")
     def visit_stmt_let(self, stmt_let: NodeStmtLet):
         expr_type = type(stmt_let.expr.var).__name__
-        if stmt_let.identifier.Value in self.vars:
-            raise Exception(f"Identifier Already Used: {stmt_let.identifier.Value}")
+        for i in range(0, len(self.vars)):
+            if stmt_let.identifier.Value in self.vars[i]: raise Exception(f"Identifier Already Used: {stmt_let.identifier.Value}")
         self.vars.append([stmt_let.identifier.Value,Var(stackloc= self.stack_size)])
         if expr_type == 'NodeExprIntLit': self.var_values.append(stmt_let.expr.var.int_lit.Value)
         elif expr_type == 'NodeExprFloatLit': self.var_values.append(stmt_let.expr.var.float_lit.Value)
@@ -157,6 +157,8 @@ class Generator:
         pass # TODO VISIT_STMT_FOR
     def visit_stmt_def(self, stmt_def: NodeStmtDef):
         pass # TODO VISIT_STMT_DEF
+    def visit_stmt_include(self, stmt_include: NodeStmtInclude):
+        pass # TODO VISIT_STMT_INCLUDE
 
     # Visitor Dictionaries
     expr_visitor: dict = {
@@ -177,7 +179,8 @@ class Generator:
         'NodeStmtIf': visit_stmt_if,
         'NodeStmtWhile': visit_stmt_while,
         'NodeStmtFor': visit_stmt_for,
-        'NodeStmtDef': visit_stmt_def
+        'NodeStmtDef': visit_stmt_def,
+        'NodeStmtInclude': visit_stmt_include
     }
 
     # Generators
@@ -192,12 +195,19 @@ class Generator:
         self.text.write("    global _start\n\n")
 
         self.text.write("_start:\n")
+
+        self.vars.append(["EXIT_SUCCESS", Var(stackloc=self.stack_size)])
+        self.var_values.append("0")
+        self.text.write("    mov rax, 0\n")
+        self.push("rax")
+
+        self.vars.append(["EXIT_FAILURE", Var(stackloc=self.stack_size)])
+        self.var_values.append("1")
+        self.text.write("    mov rax, 1\n")
+        self.push("rax")
+
         for stmt in self.program.stmts:
             self.gen_stmt(stmt)
-
-        self.text.write("    mov rax, 60\n")
-        self.text.write("    mov rdi, 0\n")
-        self.text.write("    syscall\n\n")
 
         self.text.write("length_function:\n")
         self.text.write("    xor rdx, rdx\n")

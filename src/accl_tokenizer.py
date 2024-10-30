@@ -15,7 +15,7 @@ class TokenType(Enum):
 
     # Keywords
     Let = 7
-    Def = 8
+    Function = 8
     Is = 9
     Exit = 10
     Return = 11
@@ -25,6 +25,7 @@ class TokenType(Enum):
     Elif = 29
     While = 30
     For = 31
+    Include = 32
 
     # Symbols
     Equals = 13
@@ -76,8 +77,8 @@ class Tokenizer:
                     elif buffer == "let" and not isalnum(self.peek()):
                         tokens.append(Token(Type= TokenType.Let))
                         buffer = ""
-                    elif buffer == "def" and not isalnum(self.peek()):
-                        tokens.append(Token(Type= TokenType.Def))
+                    elif buffer == "function" and not isalnum(self.peek()):
+                        tokens.append(Token(Type= TokenType.Function))
                         buffer = ""
                     elif buffer == "print" and not isalnum(self.peek()):
                         tokens.append(Token(Type= TokenType.Print))
@@ -102,6 +103,9 @@ class Tokenizer:
                         buffer = ""
                     elif buffer == "return" and not isalnum(self.peek()):
                         tokens.append(Token(Type= TokenType.Return))
+                        buffer = ""
+                    elif buffer == "include" and not isalnum(self.peek()):
+                        tokens.append(Token(Type= TokenType.Include))
                         buffer = ""
                     elif buffer == "int" and not isalnum(self.peek()) or buffer == "float" and not isalnum(self.peek()) or buffer == "char" and not isalnum(self.peek()) or buffer == "str" and not isalnum(self.peek()) or buffer == "bool":
                         tokens.append(Token(Type= TokenType.DataType, Value= buffer))

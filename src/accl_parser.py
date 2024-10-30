@@ -117,6 +117,9 @@ class NodeStmtWhile:
 class NodeStmtFor:
     def __init__(self):
         pass # TODO NODESTMTFOR
+class NodeStmtInclude:
+    def __init__(self):
+        pass # TODO NODESTMTINCLUDE
 class NodeStmt:
     def __init__(self, var: Union['NodeStmtExit',
             'NodeStmtReturn',
@@ -236,10 +239,12 @@ class Parser:
             pass # TODO PARSE WHILE LOOP STATEMENT
         elif token and token.Type == TokenType.For:
             pass # TODO PARSE FOR LOOP STATEMENT
-        elif token and token.Type == TokenType.Def:
-            pass # TODO PARSE FUNCTION DEF STATEMENT
+        elif token and token.Type == TokenType.Function:
+            pass # TODO PARSE FUNCTION DEFINITION STATEMENT
+        elif token and token.Type == TokenType.Include:
+            pass # TODO PARSE INCLUDE STATEMENT
 
-    def parse_program(self):
+    def parse_program(self) -> NodeProgram:
         program: NodeProgram = NodeProgram(stmts=[])
         while self.peek():
             stmt = self.parse_stmt()
@@ -255,12 +260,10 @@ class Parser:
         else:
             offset += self.index
             return self.tokens[offset]
-
     def consume(self) -> Token:
         self.index += 1
         return self.tokens[self.index - 1]
-
-    def expect(self, token: TokenType, errmessage: str = ""):
+    def expect(self, token: TokenType, errmessage: str = "") -> None:
         token_: Token = self.peek()
         if token_ and token_.Type == token:
             self.consume()
