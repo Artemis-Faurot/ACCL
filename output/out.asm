@@ -1,6 +1,12 @@
 section .data
-    float_2: dq 1.5
-    string_0 db "Hello, World!", 0xa, 0
+    float_0: dq 1.5
+    char_0 db "A", 0
+    string_0 db "Hello, World!", 0
+    print_0 db "10", 0xa, 0
+    print_1 db "1.5", 0xa, 0
+    print_2 db "A", 0xa, 0
+    print_3 db "Hello, World!", 0xa, 0
+    print_4 db "True", 0xa, 0
 
 section .text
     global _start
@@ -9,13 +15,22 @@ _start:
     mov rax, 10
     push rax
 
-    mov rax, qword [float_2]
+    mov rax, QWORD [float_0]
+    sub rsp, 8
+    mov QWORD [rsp], rax
+    lea rax, [char_0]
     push rax
 
     lea rax, [string_0]
     push rax
 
-    push QWORD [rsp + 0]
+    mov rax, 1
+    push rax
+
+    push QWORD [rsp + 32]
+
+    lea rax, [print_0]
+    push rax
 
     pop rsi
     call length_function
@@ -23,7 +38,43 @@ _start:
     mov rdi, 1
     syscall
 
-    push QWORD [rsp + 0]
+    push QWORD [rsp + 32]
+
+    lea rax, [print_1]
+    push rax
+
+    pop rsi
+    call length_function
+    mov rax, 1
+    mov rdi, 1
+    syscall
+
+    push QWORD [rsp + 32]
+
+    lea rax, [print_2]
+    push rax
+
+    pop rsi
+    call length_function
+    mov rax, 1
+    mov rdi, 1
+    syscall
+
+    push QWORD [rsp + 32]
+
+    lea rax, [print_3]
+    push rax
+
+    pop rsi
+    call length_function
+    mov rax, 1
+    mov rdi, 1
+    syscall
+
+    push QWORD [rsp + 32]
+
+    lea rax, [print_4]
+    push rax
 
     pop rsi
     call length_function
@@ -55,3 +106,4 @@ length_loop:
 done_length:
     mov rax, rdx
     ret
+
