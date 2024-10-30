@@ -1,7 +1,8 @@
-/*
-!./*.*
-!./*/
+*
+!*.*
+!*/
+!LICENSE
 
-./output/
-./.idea/
-./.vscode/
+output/
+.idea/
+.vscode/
