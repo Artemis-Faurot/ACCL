@@ -1,5 +1,5 @@
 #! /bin/bash
-debug=1
+debug=0
 rm -rf ./output
 mkdir ./output
 filename=$(basename $1 .accl)

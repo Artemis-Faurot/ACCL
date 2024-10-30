@@ -1,21 +1,4 @@
-let test_int: int = 10;
-let test_float: float = 1.5;
-let test_char: char = 'A';
-let test_str: str = "Hello, World!";
-let test_bool: bool = True;
+let hello: str = "Hello, World!";
 
-print(test_int);
-print(test_float);
-print(test_char);
-print(test_str);
-print(test_bool);
-
-print("");
-
-print(16);
-print(8.7);
-print('E');
-print("Beans");
-print(False);
-
+print(hello);
 exit 0;

@@ -14,12 +14,8 @@ def main():
     tokenizer: Tokenizer = Tokenizer(contents)
     tokens: list[Token] = tokenizer.tokenize()
 
-    if debug: print(tokens)
-
     parser: Parser = Parser(tokens)
     program: NodeProgram or None = parser.parse_program() # type: ignore
-
-    if debug: print(program)
 
     if not program:
         raise Exception("Invalid program")
