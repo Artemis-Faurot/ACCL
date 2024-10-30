@@ -1,5 +1,6 @@
 from accl_parser import NodeProgram, NodeStmt, NodeExpr, NodeExprIntLit, NodeStmtExit, NodeStmtLet, NodeExprIdentifier, \
-    NodeExprFloatLit, NodeExprCharLit, NodeExprStrLit, NodeExprBoolLit, NodeStmtPrint
+    NodeExprFloatLit, NodeExprCharLit, NodeExprStrLit, NodeExprFStrLit, NodeExprBoolLit, NodeStmtPrint, NodeStmtDef, \
+    NodeStmtReassignment, NodeStmtIf, NodeStmtWhile, NodeStmtFor
 import io
 
 class Var:
@@ -33,7 +34,7 @@ class Generator:
         label = f"float_{self.float_amount}"
         self.float_amount += 1
 
-        self.data.write(f"    {label}: dq {expr_float_lit.float_lit.Value}\n")
+        self.data.write(f"    {label} dq {expr_float_lit.float_lit.Value}\n")
         self.text.write(f"    mov rax, QWORD [{label}]\n")
         self.push_float("rax")
     def visit_expr_char_lit(self, expr_char_lit: NodeExprCharLit):
@@ -50,6 +51,14 @@ class Generator:
         self.string_amount += 1
 
         self.data.write(f'    {label} db "{string_value}", 0\n')
+        self.text.write(f"    lea rax, [{label}]\n")
+        self.push("rax")
+    def visit_expr_fstr_lit(self, expr_fstr_lit: NodeExprFStrLit):
+        fstring_value = expr_fstr_lit.fstr_lit.Value
+        label = f"fstring_{self.string_amount}"
+        self.string_amount += 1
+
+        self.data.write(f'    {label} db "{fstring_value}", 0\n')
         self.text.write(f"    lea rax, [{label}]\n")
         self.push("rax")
     def visit_expr_bool_lit(self, expr_bool_lit: NodeExprBoolLit):
@@ -118,6 +127,8 @@ class Generator:
             self.data.write(f'    {label} db "{str_value}", 0xa, 0\n')
             self.text.write(f"    lea rax, [{label}]\n")
             self.push("rax")
+        elif expr_type == 'NodeExprFStrLit':
+            pass # TODO PRINT FSTRING
         elif expr_type == 'NodeExprBoolLit':
             bool_value = stmt_print.expr.var.bool_lit.Value
 
@@ -136,6 +147,16 @@ class Generator:
         self.text.write("    mov rax, 1\n")
         self.text.write("    mov rdi, 1\n")
         self.text.write("    syscall\n\n")
+    def visit_stmt_reassign(self, stmt_reassign: NodeStmtReassignment):
+        pass # TODO VISIT_STMT_REASSIGN
+    def visit_stmt_if(self, stmt_if: NodeStmtIf):
+        pass # TODO VISIT_STMT_IF
+    def visit_stmt_while(self, stmt_while: NodeStmtWhile):
+        pass # TODO VISIT_STMT_WHILE
+    def visit_stmt_for(self, stmt_for: NodeStmtFor):
+        pass # TODO VISIT_STMT_FOR
+    def visit_stmt_def(self, stmt_def: NodeStmtDef):
+        pass # TODO VISIT_STMT_DEF
 
     # Visitor Dictionaries
     expr_visitor: dict = {
@@ -143,14 +164,20 @@ class Generator:
         'NodeExprFloatLit': visit_expr_float_lit,
         'NodeExprCharLit': visit_expr_char_lit,
         'NodeExprStrLit': visit_expr_str_lit,
+        'NodeExprFStrLit': visit_expr_fstr_lit,
         'NodeExprBoolLit': visit_expr_bool_lit,
         'NodeExprIdentifier': visit_expr_identifier
     }
 
     stmt_visitor: dict = {
         'NodeStmtExit': visit_stmt_exit,
-        'NodeStmtLet' : visit_stmt_let,
-        'NodeStmtPrint' : visit_stmt_print
+        'NodeStmtLet': visit_stmt_let,
+        'NodeStmtPrint': visit_stmt_print,
+        'NodeStmtReassignment': visit_stmt_reassign,
+        'NodeStmtIf': visit_stmt_if,
+        'NodeStmtWhile': visit_stmt_while,
+        'NodeStmtFor': visit_stmt_for,
+        'NodeStmtDef': visit_stmt_def
     }
 
     # Generators

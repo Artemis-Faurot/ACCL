@@ -1,5 +1,5 @@
 section .data
-    float_0: dq 1.5
+    float_0 dq 1.5
     char_0 db "A", 0
     string_0 db "Hello, World!", 0
     print_0 db "10", 0xa, 0
@@ -7,6 +7,12 @@ section .data
     print_2 db "A", 0xa, 0
     print_3 db "Hello, World!", 0xa, 0
     print_4 db "True", 0xa, 0
+    print_5 db "", 0xa, 0
+    print_6 db "16", 0xa, 0
+    print_7 db "8.7", 0xa, 0
+    print_8 db "E", 0xa, 0
+    print_9 db "Beans", 0xa, 0
+    print_10 db "False", 0xa, 0
 
 section .text
     global _start
@@ -74,6 +80,60 @@ _start:
     push QWORD [rsp + 32]
 
     lea rax, [print_4]
+    push rax
+
+    pop rsi
+    call length_function
+    mov rax, 1
+    mov rdi, 1
+    syscall
+
+    lea rax, [print_5]
+    push rax
+
+    pop rsi
+    call length_function
+    mov rax, 1
+    mov rdi, 1
+    syscall
+
+    lea rax, [print_6]
+    push rax
+
+    pop rsi
+    call length_function
+    mov rax, 1
+    mov rdi, 1
+    syscall
+
+    lea rax, [print_7]
+    push rax
+
+    pop rsi
+    call length_function
+    mov rax, 1
+    mov rdi, 1
+    syscall
+
+    lea rax, [print_8]
+    push rax
+
+    pop rsi
+    call length_function
+    mov rax, 1
+    mov rdi, 1
+    syscall
+
+    lea rax, [print_9]
+    push rax
+
+    pop rsi
+    call length_function
+    mov rax, 1
+    mov rdi, 1
+    syscall
+
+    lea rax, [print_10]
     push rax
 
     pop rsi

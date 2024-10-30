@@ -10,4 +10,12 @@ print(test_char);
 print(test_str);
 print(test_bool);
 
+print("");
+
+print(16);
+print(8.7);
+print('E');
+print("Beans");
+print(False);
+
 exit 0;

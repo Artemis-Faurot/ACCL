@@ -25,6 +25,12 @@ class NodeExprStrLit:
 
     def __repr__(self):
         return f"NodeExprStrLit:\n\tstr_lit: {self.str_lit}\n"
+class NodeExprFStrLit:
+    def __init__(self, fstr_lit: Token):
+        self.fstr_lit: Token = fstr_lit
+
+    def __repr__(self):
+        return f"NodeExprFStrLit:\n\tfstr_lit: {self.fstr_lit}\n"
 class NodeExprBoolLit:
     def __init__(self, bool_lit: Token):
         self.bool_lit: Token = bool_lit
@@ -42,29 +48,26 @@ class NodeExpr:
             'NodeExprFloatLit',
             'NodeExprCharLit',
             'NodeExprStrLit',
+            'NodeExprFStrLit',
             'NodeExprBoolLit',
             'NodeExprIdentifier']):
         self.var: Union['NodeExprIntLit',
             'NodeExprFloatLit',
             'NodeExprCharLit',
             'NodeExprStrLit',
+            'NodeExprFStrLit',
             'NodeExprBoolLit',
             'NodeExprIdentifier'] = var
 
     def __repr__(self):
         return f"NodeExpr:\n\tvar: {self.var}\n"
+
 class NodeStmtExit:
     def __init__(self, expr: NodeExpr):
         self.expr: NodeExpr = expr
 
     def __repr__(self):
         return f"NodeStmtExit:\n\texpr: {self.expr}\n"
-class NodeStmtReturn:
-    def __init__(self, expr: NodeExpr):
-        self.expr: NodeExpr = expr
-
-    def __repr__(self):
-        return f"NodeStmtReturn:\n\texpr: {self.expr}\n"
 class NodeStmtLet:
     def __init__(self, Identifier: Token, Type: Token, Expr: NodeExpr):
         self.identifier: Token = Identifier
@@ -73,6 +76,25 @@ class NodeStmtLet:
 
     def __repr__(self):
         return f"NodeStmtLet:\n\tidentifier: {self.identifier}\n\ttype: {self.type}\n\texpr: {self.expr}\n"
+class NodeStmtPrint:
+    def __init__(self, expr: NodeExpr):
+        self.expr: NodeExpr = expr
+
+    def __repr__(self):
+        return f"NodeStmtPrint:\n\texpr: {self.expr}\n"
+class NodeStmtReassignment:
+    def __init_(self, Identifier: Token, Expr: NodeExpr):
+        self.identifier: Token = Identifier
+        self.expr: NodeExpr = Expr
+
+    def __repr__(self):
+        return f"NodeStmtReassignment:\n\tidentifier: {self.identifier}\n\texpr: {self.expr}\n"
+class NodeStmtReturn:
+    def __init__(self, expr: NodeExpr):
+        self.expr: NodeExpr = expr
+
+    def __repr__(self):
+        return f"NodeStmtReturn:\n\texpr: {self.expr}\n"
 class NodeStmtDef:
     def __init__(self,
                  Identifier: Token,
@@ -86,26 +108,32 @@ class NodeStmtDef:
 
     def __repr__(self):
         return f"NodeStmtDef:\n\tidentifier: {self.identifier}\n\tparameters: {self.parameters}\n\treturn type: {self.returnType}\n\tstmts: {self.stmts}\n"
-class NodeStmtPrint:
-    def __init__(self, expr: NodeExpr):
-        self.expr: NodeExpr = expr
-
-    def __repr__(self):
-        return f"NodeStmtPrint:\n\texpr: {self.expr}\n"
+class NodeStmtIf:
+    def __init__(self):
+        pass # TODO NODESTMTIF
+class NodeStmtWhile:
+    def __init__(self):
+        pass # TODO NODESTMTWHILE
+class NodeStmtFor:
+    def __init__(self):
+        pass # TODO NODESTMTFOR
 class NodeStmt:
     def __init__(self, var: Union['NodeStmtExit',
             'NodeStmtReturn',
             'NodeStmtLet',
+            'NodeStmtReassignment',
             'NodeStmtDef',
             'NodeStmtPrint']):
         self.var: Union['NodeStmtExit',
             'NodeStmtReturn',
             'NodeStmtLet',
+            'NodeStmtReassignment',
             'NodeStmtDef',
             'NodeStmtPrint'] = var
 
     def __repr__(self):
         return f"NodeStmt:\n\tvar: {self.var}\n"
+
 class NodeProgram:
     def __init__(self, stmts: list[NodeStmt]):
         self.stmts: list[NodeStmt] = stmts
@@ -128,6 +156,8 @@ class Parser:
             return NodeExpr(var= NodeExprCharLit(char_lit= self.consume()))
         elif token and token.Type == TokenType.StringLiteral:
             return NodeExpr(var= NodeExprStrLit(str_lit= self.consume()))
+        elif token and token.Type == TokenType.FStringLiteral:
+            return NodeExpr(var= NodeExprFStrLit(fstr_lit= self.consume()))
         elif token and token.Type == TokenType.BooleanLiteral:
             return NodeExpr(var= NodeExprBoolLit(bool_lit= self.consume()))
         elif token and token.Type == TokenType.Identifier:
@@ -198,6 +228,16 @@ class Parser:
                 return NodeStmt(var= stmt_print)
             else:
                 return None
+        elif token and token.Type == TokenType.Identifier:
+            pass # TODO PARSE REASSIGNMENT/CALL STATEMENT
+        elif token and token.Type == TokenType.If:
+            pass # TODO PARSE IF STATEMENT
+        elif token and token.Type == TokenType.While:
+            pass # TODO PARSE WHILE LOOP STATEMENT
+        elif token and token.Type == TokenType.For:
+            pass # TODO PARSE FOR LOOP STATEMENT
+        elif token and token.Type == TokenType.Def:
+            pass # TODO PARSE FUNCTION DEF STATEMENT
 
     def parse_program(self):
         program: NodeProgram = NodeProgram(stmts=[])

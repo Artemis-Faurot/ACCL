@@ -7,6 +7,7 @@ class TokenType(Enum):
     FloatLiteral = 1
     CharacterLiteral = 2
     StringLiteral = 3
+    FStringLiteral = 26
     BooleanLiteral = 4
 
     Identifier = 5
@@ -19,6 +20,11 @@ class TokenType(Enum):
     Exit = 10
     Return = 11
     Print = 12
+    If = 27
+    Else = 28
+    Elif = 29
+    While = 30
+    For = 31
 
     # Symbols
     Equals = 13
@@ -76,6 +82,21 @@ class Tokenizer:
                     elif buffer == "print" and not isalnum(self.peek()):
                         tokens.append(Token(Type= TokenType.Print))
                         buffer = ""
+                    elif buffer == "if" and not isalnum(self.peek()):
+                        tokens.append(Token(Type=TokenType.If))
+                        buffer = ""
+                    elif buffer == "elif" and not isalnum(self.peek()):
+                        tokens.append(Token(Type=TokenType.Elif))
+                        buffer = ""
+                    elif buffer == "else" and not isalnum(self.peek()):
+                        tokens.append(Token(Type=TokenType.Else))
+                        buffer = ""
+                    elif buffer == "while" and not isalnum(self.peek()):
+                        tokens.append(Token(Type=TokenType.While))
+                        buffer = ""
+                    elif buffer == "for" and not isalnum(self.peek()):
+                        tokens.append(Token(Type=TokenType.For))
+                        buffer = ""
                     elif buffer == "is" and not isalnum(self.peek()):
                         tokens.append(Token(Type= TokenType.Is))
                         buffer = ""
@@ -87,6 +108,16 @@ class Tokenizer:
                         buffer = ""
                     elif buffer == "True" and not isalnum(self.peek()) or buffer == "False" and not isalnum(self.peek()):
                         tokens.append(Token(Type= TokenType.BooleanLiteral, Value= buffer))
+                        buffer = ""
+                    elif buffer == 'f' and self.peek() == '"':
+                        self.consume()
+                        buffer = ""
+                        while self.peek() != '"' and self.peek():
+                            buffer += self.consume()
+                        if not self.peek() or self.peek() != '"':
+                            raise Exception("Expected \" to end fstring declaration")
+                        self.consume()
+                        tokens.append(Token(Type= TokenType.FStringLiteral, Value= buffer))
                         buffer = ""
                 if buffer != "":
                     tokens.append(Token(Type= TokenType.Identifier, Value= buffer))
