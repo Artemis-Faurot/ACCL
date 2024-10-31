@@ -46,11 +46,36 @@ class Generator:
         self.text.write(f"    lea rax, [{label}]\n")
         self.push("rax")
     def visit_expr_str_lit(self, expr_str_lit: NodeExprStrLit):
-        string_value = expr_str_lit.str_lit.Value
         label = f"string_{self.string_amount}"
         self.string_amount += 1
+        newline_amount = 0
+        string_list = list(expr_str_lit.str_lit.Value)
+        value_list = []
+        a = i = 0
+        if '\\' in string_list:
+            while i <= len(string_list):
+                try:
+                    if string_list[i] == '\\' and string_list[i+1] == 'n':
+                        del string_list[i]
+                        del string_list[i]
+                        value_list.append(''.join(string_list[a:i]))
+                        newline_amount += 1
+                        a = i
+                        i -= 1
+                except:
+                    value_list.append(''.join(string_list[a:i]))
+                    break
+                i += 1
+        else:
+            value_list.append(''.join(string_list))
 
-        self.data.write(f'    {label} db "{string_value}", 0\n')
+        self.data.write(f'    {label} db ')
+        for value in value_list:
+            self.data.write(f'"{value}", 0xa,')
+            newline_amount -= 1
+        for i in range(0, newline_amount):
+            self.data.write(' 0xa,')
+        self.data.write(" 0\n")
         self.text.write(f"    lea rax, [{label}]\n")
         self.push("rax")
     def visit_expr_fstr_lit(self, expr_fstr_lit: NodeExprFStrLit):
@@ -122,9 +147,34 @@ class Generator:
             self.text.write(f"    lea rax, [{label}]\n")
             self.push("rax")
         elif expr_type == 'NodeExprStrLit':
-            str_value = stmt_print.expr.var.str_lit.Value
+            string_list = list(stmt_print.expr.var.str_lit.Value)
+            newline_amount = 0
+            value_list = []
+            a = i = 0
+            if '\\' in string_list:
+                while i <= len(string_list):
+                    try:
+                        if string_list[i] == '\\' and string_list[i + 1] == 'n':
+                            del string_list[i]
+                            del string_list[i]
+                            value_list.append(''.join(string_list[a:i]))
+                            newline_amount += 1
+                            a = i
+                            i -= 1
+                    except:
+                        value_list.append(''.join(string_list[a:i]))
+                        break
+                    i += 1
+            else:
+                value_list.append(''.join(string_list))
 
-            self.data.write(f'    {label} db "{str_value}", 0xa, 0\n')
+            self.data.write(f'    {label} db ')
+            for value in value_list:
+                self.data.write(f'"{value}", 0xa,')
+                newline_amount -= 1
+            for i in range(0, newline_amount):
+                self.data.write(' 0xa,')
+            self.data.write(" 0\n")
             self.text.write(f"    lea rax, [{label}]\n")
             self.push("rax")
         elif expr_type == 'NodeExprFStrLit':
@@ -136,9 +186,34 @@ class Generator:
             self.text.write(f"    lea rax, [{label}]\n")
             self.push("rax")
         elif expr_type == 'NodeExprIdentifier':
-            identifier_value = self.visit_expr_identifier(stmt_print.expr.var)
+            identifier_list = list(self.visit_expr_identifier(stmt_print.expr.var))
+            newline_amount = 0
+            value_list = []
+            a = i = 0
+            if '\\' in identifier_list:
+                while i <= len(identifier_list):
+                    try:
+                        if identifier_list[i] == '\\' and identifier_list[i+1] == 'n':
+                            del identifier_list[i]
+                            del identifier_list[i]
+                            value_list.append(''.join(identifier_list[a:i]))
+                            newline_amount += 1
+                            a = i
+                            i -= 1
+                    except:
+                        value_list.append(''.join(identifier_list[a:i]))
+                        break
+                    i += 1
+            else:
+                value_list.append(''.join(identifier_list))
 
-            self.data.write(f'    {label} db "{identifier_value}", 0xa, 0\n')
+            self.data.write(f'    {label} db ')
+            for value in value_list:
+                self.data.write(f'"{value}", 0xa,')
+                newline_amount -= 1
+            for i in range(0, newline_amount):
+                self.data.write(' 0xa,')
+            self.data.write(" 0\n")
             self.text.write(f"    lea rax, [{label}]\n")
             self.push("rax")
         self.pop("rsi")

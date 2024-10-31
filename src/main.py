@@ -3,7 +3,7 @@ from accl_parser import Parser, NodeProgram
 from accl_tokenizer import Tokenizer, Token
 import sys
 
-debug: bool = False
+# sys.argv.append('../main.accl')
 
 def main():
     if len(sys.argv) != 2:

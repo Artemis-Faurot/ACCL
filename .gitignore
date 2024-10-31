@@ -3,6 +3,9 @@
 !*/
 !LICENSE
 
+testing.py
+
+src/output/
 output/
 .idea/
 .vscode/
