@@ -1,6 +1,5 @@
 from accl_parser import NodeProgram, NodeStmt, NodeExpr, NodeExprIntLit, NodeStmtExit, NodeStmtLet, NodeExprIdentifier, \
-    NodeExprFloatLit, NodeExprCharLit, NodeExprStrLit, NodeExprFStrLit, NodeExprBoolLit, NodeStmtPrint, NodeStmtDef, \
-    NodeStmtReassignment, NodeStmtIf, NodeStmtWhile, NodeStmtFor, NodeStmtInclude, NodeStmtReturn
+    NodeExprFloatLit, NodeExprCharLit, NodeExprStrLit, NodeExprFStrLit, NodeExprBoolLit, NodeStmtPrint
 import io
 
 class Var:
@@ -19,6 +18,7 @@ class Generator:
         self.stack_size: int = 0
         self.float_amount: int = 0
         self.string_amount: int = 0
+        self.fstring_amount: int = 0
         self.char_amount: int = 0
         self.vars: list = []
         self.var_values: list = []
@@ -48,7 +48,6 @@ class Generator:
     def visit_expr_str_lit(self, expr_str_lit: NodeExprStrLit):
         label = f"string_{self.string_amount}"
         self.string_amount += 1
-        newline_amount = 0
         string_list = list(expr_str_lit.str_lit.Value)
         value_list = []
         a = i = 0
@@ -59,7 +58,6 @@ class Generator:
                         del string_list[i]
                         del string_list[i]
                         value_list.append(''.join(string_list[a:i]))
-                        newline_amount += 1
                         a = i
                         i -= 1
                 except:
@@ -72,18 +70,43 @@ class Generator:
         self.data.write(f'    {label} db ')
         for value in value_list:
             self.data.write(f'"{value}", 0xa,')
-            newline_amount -= 1
-        for i in range(0, newline_amount):
-            self.data.write(' 0xa,')
         self.data.write(" 0\n")
         self.text.write(f"    lea rax, [{label}]\n")
         self.push("rax")
     def visit_expr_fstr_lit(self, expr_fstr_lit: NodeExprFStrLit):
-        fstring_value = expr_fstr_lit.fstr_lit.Value
-        label = f"fstring_{self.string_amount}"
-        self.string_amount += 1
+        label = f"string_{self.fstring_amount}"
+        self.fstring_amount += 1
+        fstring_list = list(expr_fstr_lit.fstr_lit.Value)
+        new_string_list = []
 
-        self.data.write(f'    {label} db "{fstring_value}", 0\n')
+        if '{' in fstring_list:
+            pass # TODO VISIT_EXPR_FSTR_LIT
+        else:
+            for i in range(0, len(fstring_list)):
+                new_string_list.append(fstring_list[i])
+
+        value_list = []
+        a = i = 0
+        if '\\' in new_string_list:
+            while i <= len(new_string_list):
+                try:
+                    if new_string_list[i] == '\\' and new_string_list[i + 1] == 'n':
+                        del new_string_list[i]
+                        del new_string_list[i]
+                        value_list.append(''.join(new_string_list[a:i]))
+                        a = i
+                        i -= 1
+                except:
+                    value_list.append(''.join(new_string_list[a:i]))
+                    break
+                i += 1
+        else:
+            value_list.append(''.join(new_string_list))
+
+        self.data.write(f'    {label} db ')
+        for value in value_list:
+            self.data.write(f'"{value}", 0xa,')
+        self.data.write(" 0\n")
         self.text.write(f"    lea rax, [{label}]\n")
         self.push("rax")
     def visit_expr_bool_lit(self, expr_bool_lit: NodeExprBoolLit):
@@ -148,7 +171,6 @@ class Generator:
             self.push("rax")
         elif expr_type == 'NodeExprStrLit':
             string_list = list(stmt_print.expr.var.str_lit.Value)
-            newline_amount = 0
             value_list = []
             a = i = 0
             if '\\' in string_list:
@@ -158,7 +180,6 @@ class Generator:
                             del string_list[i]
                             del string_list[i]
                             value_list.append(''.join(string_list[a:i]))
-                            newline_amount += 1
                             a = i
                             i -= 1
                     except:
@@ -171,9 +192,6 @@ class Generator:
             self.data.write(f'    {label} db ')
             for value in value_list:
                 self.data.write(f'"{value}", 0xa,')
-                newline_amount -= 1
-            for i in range(0, newline_amount):
-                self.data.write(' 0xa,')
             self.data.write(" 0\n")
             self.text.write(f"    lea rax, [{label}]\n")
             self.push("rax")
@@ -222,18 +240,6 @@ class Generator:
         self.text.write("    mov rax, 1\n")
         self.text.write("    mov rdi, 1\n")
         self.text.write("    syscall\n\n")
-    def visit_stmt_reassign(self, stmt_reassign: NodeStmtReassignment):
-        pass # TODO VISIT_STMT_REASSIGN
-    def visit_stmt_if(self, stmt_if: NodeStmtIf):
-        pass # TODO VISIT_STMT_IF
-    def visit_stmt_while(self, stmt_while: NodeStmtWhile):
-        pass # TODO VISIT_STMT_WHILE
-    def visit_stmt_for(self, stmt_for: NodeStmtFor):
-        pass # TODO VISIT_STMT_FOR
-    def visit_stmt_def(self, stmt_def: NodeStmtDef):
-        pass # TODO VISIT_STMT_DEF
-    def visit_stmt_include(self, stmt_include: NodeStmtInclude):
-        pass # TODO VISIT_STMT_INCLUDE
 
     # Visitor Dictionaries
     expr_visitor: dict = {
@@ -249,13 +255,7 @@ class Generator:
     stmt_visitor: dict = {
         'NodeStmtExit': visit_stmt_exit,
         'NodeStmtLet': visit_stmt_let,
-        'NodeStmtPrint': visit_stmt_print,
-        'NodeStmtReassignment': visit_stmt_reassign,
-        'NodeStmtIf': visit_stmt_if,
-        'NodeStmtWhile': visit_stmt_while,
-        'NodeStmtFor': visit_stmt_for,
-        'NodeStmtDef': visit_stmt_def,
-        'NodeStmtInclude': visit_stmt_include
+        'NodeStmtPrint': visit_stmt_print
     }
 
     # Generators
