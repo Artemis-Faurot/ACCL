@@ -7,41 +7,32 @@ class TokenType(Enum):
     FloatLiteral = 1
     CharacterLiteral = 2
     StringLiteral = 3
-    FStringLiteral = 26
-    BooleanLiteral = 4
+    FStringLiteral = 4
+    BooleanLiteral = 5
 
-    Identifier = 5
-    DataType = 6
+    Identifier = 6
+    DataType = 7
 
     # Keywords
-    Let = 7
-    Function = 8
+    Let = 8
     Is = 9
     Exit = 10
-    Return = 11
-    Print = 12
-    If = 27
-    Else = 28
-    Elif = 29
-    While = 30
-    For = 31
-    Include = 32
+    Print = 11
+    Error = 24
 
     # Symbols
-    Equals = 13
-    BinaryOperator = 14     # + - * / %
-    OpenParen = 15          # (
-    CloseParen = 16         # )
-    OpenBracket = 17        # [
-    CloseBracket = 18       # ]
-    OpenBrace = 19          # {
-    CloseBrace = 20         # }
-    Colon = 21
-    Semicolon = 22
-    Comma = 23
-    Dot = 24
-
-    EOF = 25
+    Equals = 12
+    BinaryOperator = 13     # + - * / %
+    OpenParen = 14          # (
+    CloseParen = 15         # )
+    OpenBracket = 16        # [
+    CloseBracket = 17       # ]
+    OpenBrace = 18          # {
+    CloseBrace = 19         # }
+    Colon = 20
+    Semicolon = 21
+    Comma = 22
+    Dot = 23
 
 class Token:
     def __init__(self, Type: TokenType, Value: str = ""):
@@ -77,35 +68,14 @@ class Tokenizer:
                     elif buffer == "let" and not isalnum(self.peek()):
                         tokens.append(Token(Type= TokenType.Let))
                         buffer = ""
-                    elif buffer == "function" and not isalnum(self.peek()):
-                        tokens.append(Token(Type= TokenType.Function))
-                        buffer = ""
                     elif buffer == "print" and not isalnum(self.peek()):
                         tokens.append(Token(Type= TokenType.Print))
-                        buffer = ""
-                    elif buffer == "if" and not isalnum(self.peek()):
-                        tokens.append(Token(Type=TokenType.If))
-                        buffer = ""
-                    elif buffer == "elif" and not isalnum(self.peek()):
-                        tokens.append(Token(Type=TokenType.Elif))
-                        buffer = ""
-                    elif buffer == "else" and not isalnum(self.peek()):
-                        tokens.append(Token(Type=TokenType.Else))
-                        buffer = ""
-                    elif buffer == "while" and not isalnum(self.peek()):
-                        tokens.append(Token(Type=TokenType.While))
-                        buffer = ""
-                    elif buffer == "for" and not isalnum(self.peek()):
-                        tokens.append(Token(Type=TokenType.For))
                         buffer = ""
                     elif buffer == "is" and not isalnum(self.peek()):
                         tokens.append(Token(Type= TokenType.Is))
                         buffer = ""
-                    elif buffer == "return" and not isalnum(self.peek()):
-                        tokens.append(Token(Type= TokenType.Return))
-                        buffer = ""
-                    elif buffer == "include" and not isalnum(self.peek()):
-                        tokens.append(Token(Type= TokenType.Include))
+                    elif buffer == "error" and not isalnum(self.peek()):
+                        tokens.append(Token(Type= TokenType.Error))
                         buffer = ""
                     elif buffer == "int" and not isalnum(self.peek()) or buffer == "float" and not isalnum(self.peek()) or buffer == "char" and not isalnum(self.peek()) or buffer == "str" and not isalnum(self.peek()) or buffer == "bool":
                         tokens.append(Token(Type= TokenType.DataType, Value= buffer))

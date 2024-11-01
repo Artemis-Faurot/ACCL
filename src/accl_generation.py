@@ -1,5 +1,5 @@
 from accl_parser import NodeProgram, NodeStmt, NodeExpr, NodeExprIntLit, NodeStmtExit, NodeStmtLet, NodeExprIdentifier, \
-    NodeExprFloatLit, NodeExprCharLit, NodeExprStrLit, NodeExprFStrLit, NodeExprBoolLit, NodeStmtPrint
+    NodeExprFloatLit, NodeExprCharLit, NodeExprStrLit, NodeExprFStrLit, NodeExprBoolLit, NodeStmtPrint, NodeStmtError
 import io
 
 class Var:
@@ -74,7 +74,7 @@ class Generator:
         self.text.write(f"    lea rax, [{label}]\n")
         self.push("rax")
     def visit_expr_fstr_lit(self, expr_fstr_lit: NodeExprFStrLit):
-        label = f"string_{self.fstring_amount}"
+        label = f"string_{self.fstring_amount}" # TODO FINISH FSTRING
         self.fstring_amount += 1
         fstring_list = list(expr_fstr_lit.fstr_lit.Value)
         new_string_list = []
@@ -240,6 +240,19 @@ class Generator:
         self.text.write("    mov rax, 1\n")
         self.text.write("    mov rdi, 1\n")
         self.text.write("    syscall\n\n")
+    def visit_stmt_error(self, stmt_error: NodeStmtError):
+        self.gen_expr(stmt_error.errmessage)
+        self.pop("rsi")
+
+        self.text.write("    call length_function\n")
+        self.text.write("    mov rax, 1\n")
+        self.text.write("    mov rdi, 1\n")
+        self.text.write("    syscall\n\n")
+
+        self.gen_expr(stmt_error.exit_code)
+        self.text.write("    mov rax, 60\n")
+        self.pop("rdi")
+        self.text.write("    syscall\n\n")
 
     # Visitor Dictionaries
     expr_visitor: dict = {
@@ -255,7 +268,8 @@ class Generator:
     stmt_visitor: dict = {
         'NodeStmtExit': visit_stmt_exit,
         'NodeStmtLet': visit_stmt_let,
-        'NodeStmtPrint': visit_stmt_print
+        'NodeStmtPrint': visit_stmt_print,
+        'NodeStmtError': visit_stmt_error
     }
 
     # Generators

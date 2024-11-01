@@ -82,13 +82,22 @@ class NodeStmtPrint:
 
     def __repr__(self):
         return f"NodeStmtPrint:\n\texpr: {self.expr}\n"
+class NodeStmtError:
+    def __init__(self, errmessage: NodeExpr, exit_code: NodeExpr):
+        self.errmessage: NodeExpr = errmessage
+        self.exit_code: NodeExpr = exit_code
+
+    def __repr__(self):
+        return f"NodeStmtError:\n\terrmessage: {self.errmessage}\n\texit_code: {self.exit_code}\n"
 class NodeStmt:
     def __init__(self, var: Union['NodeStmtExit',
             'NodeStmtLet',
-            'NodeStmtPrint']):
+            'NodeStmtPrint',
+            'NodeStmtError']):
         self.var: Union['NodeStmtExit',
             'NodeStmtLet',
-            'NodeStmtPrint'] = var
+            'NodeStmtPrint',
+            'NodeStmtError'] = var
 
     def __repr__(self):
         return f"NodeStmt:\n\tvar: {self.var}\n"
@@ -187,6 +196,30 @@ class Parser:
                 return NodeStmt(var= stmt_print)
             else:
                 return None
+        elif token and token.Type == TokenType.Error:
+            self.consume()
+            self.expect(token= TokenType.OpenParen, errmessage= "Expected open parenthesis to start error arguments")
+
+            if self.peek():
+                Errmessage: NodeExpr = self.parse_expr()
+                if type(Errmessage.var) != NodeExprStrLit and type(Errmessage.var) != NodeExprIdentifier:
+                    raise Exception("Expected string literal for error message argument")
+            else:
+                raise Exception("Expected Value")
+
+            self.expect(token= TokenType.Comma, errmessage= "Expected a comma to separate arguments")
+
+            if self.peek():
+                Exit_code: NodeExpr = self.parse_expr()
+                if type(Exit_code.var) != NodeExprIntLit and type(Errmessage.var) != NodeExprIdentifier:
+                    raise Exception("Expected integer literal for error exit code")
+            else:
+                raise Exception("Expected Value")
+
+            self.expect(token= TokenType.CloseParen, errmessage= "Expected closing parenthesis to end error arguments")
+            self.expect(token= TokenType.Semicolon, errmessage= "Expected semicolon to end error statement")
+            stmt_error: NodeStmtError = NodeStmtError(errmessage= Errmessage, exit_code= Exit_code)
+            return NodeStmt(var= stmt_error)
 
     def parse_program(self) -> NodeProgram:
         program: NodeProgram = NodeProgram(stmts=[])
