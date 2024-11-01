@@ -1,190 +1,198 @@
 from curses.ascii import isalpha, isdigit, isalnum
 from enum import Enum
+from dataclasses import dataclass
 
+
+@dataclass
 class TokenType(Enum):
     # Literals
-    IntegerLiteral = 0
-    FloatLiteral = 1
-    CharacterLiteral = 2
-    StringLiteral = 3
-    FStringLiteral = 4
-    BooleanLiteral = 5
+    IntLit = 0
+    FloatLit = 1
+    CharLit = 2
+    StrLit = 3
+    FStrLit = 4
+    BoolLit = 5
 
-    Identifier = 6
+    Ident = 6
     DataType = 7
 
-    # Keywords
-    Let = 8
-    Is = 9
-    Exit = 10
-    Print = 11
-    Error = 24
-
     # Symbols
-    Equals = 12
-    BinaryOperator = 13     # + - * / %
-    OpenParen = 14          # (
-    CloseParen = 15         # )
-    OpenBracket = 16        # [
-    CloseBracket = 17       # ]
-    OpenBrace = 18          # {
-    CloseBrace = 19         # }
-    Colon = 20
-    Semicolon = 21
-    Comma = 22
-    Dot = 23
+    OpenParen = 8
+    CloseParen = 9
+    OpenBracket = 10
+    CloseBracket = 11
+    OpenBrace = 12
+    CloseBrace = 13
+    Semicolon = 14
+    Equals = 15
+    Colon = 16
+    Comma = 17
+
+    # Keywords
+    Exit = 18
+    Is = 19
+    Let = 20
+    Print = 21
+    Error = 22
+
 
 class Token:
-    def __init__(self, Type: TokenType, Value: str = ""):
-        self.Type = Type
-        self.Value = Value
+    def __init__(self, type: TokenType, value: str = "") -> None:
+        self.type: TokenType = type
+        self.value: str = value
 
-    def __repr__(self):
-        if self.Value != "":
-            return f"Token(Type= {self.Type}, Value= {self.Value})\n"
-        elif self.Type == TokenType.Semicolon:
-            return f"Token(Type= {self.Type})\n\n"
-        elif self.Type == TokenType.OpenBrace:
-            return f"Token(Type= {self.Type})\n\n"
+    def __repr__(self) -> str:
+        if self.value != "":
+            return f"Token(Type= {self.type}, Value= {self.value})\n"
+        elif self.type == TokenType.Semicolon or self.type == TokenType.OpenBrace:
+            return f"Token(Type= {self.type})\n\n"
         else:
-            return f"Token(Type= {self.Type})\n"
+            return f"Token(Type= {self.type})\n"
+
 
 class Tokenizer:
-    def __init__(self, src: str):
+    def __init__(self, src: str) -> None:
         self.src: str = src
         self.index: int = 0
 
-    def tokenize(self) -> list[Token]:
-        tokens: list[Token] = []
-        buffer: str = ""
+        self.buffer: str = ""
+        self.tokens: list[Token] = []
 
-        while self.peek() is not None:
-            if isalpha(self.peek()):
-                while self.peek() is not None and isalnum(self.peek()) or self.peek() is not None and self.peek() == "_":
-                    buffer += self.consume()
-                    if buffer == "exit" and not isalnum(self.peek()):
-                        tokens.append(Token(Type= TokenType.Exit))
-                        buffer = ""
-                    elif buffer == "let" and not isalnum(self.peek()):
-                        tokens.append(Token(Type= TokenType.Let))
-                        buffer = ""
-                    elif buffer == "print" and not isalnum(self.peek()):
-                        tokens.append(Token(Type= TokenType.Print))
-                        buffer = ""
-                    elif buffer == "is" and not isalnum(self.peek()):
-                        tokens.append(Token(Type= TokenType.Is))
-                        buffer = ""
-                    elif buffer == "error" and not isalnum(self.peek()):
-                        tokens.append(Token(Type= TokenType.Error))
-                        buffer = ""
-                    elif buffer == "int" and not isalnum(self.peek()) or buffer == "float" and not isalnum(self.peek()) or buffer == "char" and not isalnum(self.peek()) or buffer == "str" and not isalnum(self.peek()) or buffer == "bool":
-                        tokens.append(Token(Type= TokenType.DataType, Value= buffer))
-                        buffer = ""
-                    elif buffer == "True" and not isalnum(self.peek()) or buffer == "False" and not isalnum(self.peek()):
-                        tokens.append(Token(Type= TokenType.BooleanLiteral, Value= buffer))
-                        buffer = ""
-                    elif buffer == 'f' and self.peek() == '"':
-                        self.consume()
-                        buffer = ""
-                        while self.peek() != '"' and self.peek():
-                            buffer += self.consume()
-                        if not self.peek() or self.peek() != '"':
-                            raise Exception("Expected \" to end fstring declaration")
-                        self.consume()
-                        tokens.append(Token(Type= TokenType.FStringLiteral, Value= buffer))
-                        buffer = ""
-                if buffer != "":
-                    tokens.append(Token(Type= TokenType.Identifier, Value= buffer))
-                    buffer = ""
-            elif isdigit(self.peek()):
-                buffer += self.consume()
-                isfloat = False
-                while self.peek() is not None and isdigit(self.peek()) or self.peek() is not None and self.peek() == ".":
-                    if self.peek() == "." and not isfloat:
-                        isfloat = True
-                        buffer += self.consume()
-                        if not self.peek() or not isdigit(self.peek()):
-                            raise ValueError("Float variables must have at least one digit behind dot")
-                    elif self.peek() == "." and isfloat:
-                        raise ValueError("Float variables should only have one dot")
-                    buffer += self.consume()
-                if isfloat:
-                    tokens.append(Token(Type= TokenType.FloatLiteral, Value= buffer))
-                    buffer = ""
-                else:
-                    tokens.append(Token(Type= TokenType.IntegerLiteral, Value= buffer))
-                    buffer = ""
-            elif self.peek() == '\'':
-                self.consume()
-                if self.peek(1) != '\'':
-                    raise ValueError("Char variable must contain one char")
-                buffer = self.consume()
-                if self.peek() != '\'':
-                    raise Exception("Expected ' to end char declaration")
-                self.consume()
-                tokens.append(Token(Type= TokenType.CharacterLiteral, Value= buffer))
-                buffer = ""
-            elif self.peek() == '"':
-                self.consume()
-                while self.peek() != '"' and self.peek():
-                    buffer += self.consume()
-                if not self.peek() or self.peek() != '"':
-                    raise Exception("Expected \" to end str declaration")
-                self.consume()
-                tokens.append(Token(Type= TokenType.StringLiteral, Value= buffer))
-                buffer = ""
-            elif self.peek() == ';':
-                self.consume()
-                tokens.append(Token(Type= TokenType.Semicolon))
-            elif self.peek() == ':':
-                self.consume()
-                tokens.append(Token(Type= TokenType.Colon))
-            elif self.peek() == '(':
-                self.consume()
-                tokens.append(Token(Type= TokenType.OpenParen))
-            elif self.peek() == ')':
-                self.consume()
-                tokens.append(Token(Type= TokenType.CloseParen))
-            elif self.peek() == '[':
-                self.consume()
-                tokens.append(Token(Type= TokenType.OpenBracket))
-            elif self.peek() == ']':
-                self.consume()
-                tokens.append(Token(Type= TokenType.CloseBracket))
-            elif self.peek() == '{':
-                self.consume()
-                tokens.append(Token(Type= TokenType.OpenBrace))
-            elif self.peek() == '}':
-                self.consume()
-                tokens.append(Token(Type= TokenType.CloseBrace))
-            elif self.peek() == '+' or self.peek() == '-' or self.peek() == '*' or self.peek() == '/' or self.peek() == '%':
-                buffer = self.consume()
-                tokens.append(Token(Type= TokenType.BinaryOperator, Value= buffer))
-                buffer = ""
-            elif self.peek() == '=':
-                self.consume()
-                tokens.append(Token(Type= TokenType.Equals))
-            elif self.peek() == ',':
-                self.consume()
-                tokens.append(Token(Type= TokenType.Comma))
-            elif self.peek() == '.':
-                self.consume()
-                tokens.append(Token(Type= TokenType.Dot))
-            elif self.peek() == ' ' or self.peek() == '\n' or self.peek() == '\t':
-                self.consume()
-            else:
-                raise Exception("Found unrecognized character while lexing:", self.peek())
-        self.index = 0
-        return tokens
-
-    def peek(self, offset: int = 0) -> str or None: # type: ignore
+    def peek(self, offset: int = 0) -> str:
         if self.index + offset >= len(self.src):
-            return None
+            return ""
         else:
-            offset += self.index
-            return self.src[offset]
+            return self.src[offset + self.index]
 
     def consume(self) -> str:
         self.index += 1
         return self.src[self.index - 1]
 
+    def check_keywords(self) -> None:
+        types: list[str] = ["int", "float", "char", "str", "bool"]
+        bools: list[str] = ["true", "false"]
+        if self.buffer == "exit" and not isalnum(self.peek()):
+            self.tokens.append(Token(type=TokenType.Exit))
+            self.buffer = ""
+        elif self.buffer == "is" and not isalnum(self.peek()):
+            self.tokens.append(Token(type=TokenType.Is))
+            self.buffer = ""
+        elif self.buffer == "let" and not isalnum(self.peek()):
+            self.tokens.append(Token(type=TokenType.Let))
+            self.buffer = ""
+        elif self.buffer == "print" and not isalnum(self.peek()):
+            self.tokens.append(Token(type=TokenType.Print))
+            self.buffer = ""
+        elif self.buffer == "error" and not isalnum(self.peek()):
+            self.tokens.append(Token(type=TokenType.Error))
+            self.buffer = ""
+        elif self.buffer in types and not isalnum(self.peek()):
+            self.tokens.append(Token(type=TokenType.DataType, value=self.buffer))
+            self.buffer = ""
+        elif self.buffer in bools and not isalnum(self.peek()):
+            self.tokens.append(Token(type=TokenType.BoolLit, value=self.buffer))
+            self.buffer = ""
+        elif self.buffer == "f" and self.peek() == '"':
+            self.consume()
+            while self.peek() or self.peek() != '"':
+                self.buffer += self.consume()
+            if not self.peek() or self.peek() != '"':
+                raise Exception("Expected \" to end fstring")
+            self.consume()
+            self.tokens.append(Token(type=TokenType.FStrLit, value=self.buffer))
+            self.buffer = ""
+
+    def check_symbols(self) -> None:
+        if self.peek() == "(":
+            self.consume()
+            self.tokens.append(Token(type=TokenType.OpenParen))
+        elif self.peek() == ")":
+            self.consume()
+            self.tokens.append(Token(type=TokenType.CloseParen))
+        elif self.peek() == "[":
+            self.consume()
+            self.tokens.append(Token(type=TokenType.OpenBracket))
+        elif self.peek() == "]":
+            self.consume()
+            self.tokens.append(Token(type=TokenType.CloseBracket))
+        elif self.peek() == "{":
+            self.consume()
+            self.tokens.append(Token(type=TokenType.OpenBrace))
+        elif self.peek() == "}":
+            self.consume()
+            self.tokens.append(Token(type=TokenType.CloseBrace))
+        elif self.peek() == ";":
+            self.consume()
+            self.tokens.append(Token(type=TokenType.Semicolon))
+        elif self.peek() == "=":
+            self.consume()
+            self.tokens.append(Token(type=TokenType.Equals))
+        elif self.peek() == ":":
+            self.consume()
+            self.tokens.append(Token(type=TokenType.Colon))
+        elif self.peek() == ",":
+            self.consume()
+            self.tokens.append(Token(type=TokenType.Comma))
+        elif self.peek() == " " or self.peek() == "\n" or self.peek() == "\t":
+            self.consume()
+        else:
+            raise Exception("Found unrecognized character while lexing:", self.peek())
+
+    def tokenize(self) -> list[Token]:
+        while self.peek() != "":
+            if isalpha(self.peek()):
+                while self.peek() != "" and isalnum(self.peek()) or \
+                        self.peek() != "" and self.peek() == "_":
+                    self.buffer += self.consume()
+                    self.check_keywords()
+                if self.buffer != "":
+                    self.tokens.append(Token(type=TokenType.Ident, value=self.buffer))
+                    self.buffer = ""
+            elif isdigit(self.peek()):
+                self.buffer += self.consume()
+                canfloat = False
+                isfloat = False
+                while self.peek() != "" and isdigit(self.peek()) or \
+                        self.peek() != "" and self.peek() == ".":
+                    if self.peek() == "." and canfloat and not isfloat:
+                        isfloat = True
+                        self.buffer += self.consume()
+                        if not self.peek() or not isdigit(self.peek()):
+                            raise ValueError("Floats must have at least one digit after .")
+                    elif self.peek() == "." and isfloat:
+                        raise ValueError("Float variables should only have one .")
+                    elif self.peek() == "." and not canfloat:
+                        raise ValueError("Float variables should have at least one digit before .")
+                    else:
+                        self.buffer += self.consume()
+                        canfloat = True
+                if isfloat:
+                    self.tokens.append(Token(type=TokenType.FloatLit, value=self.buffer))
+                    self.buffer = ""
+                else:
+                    self.tokens.append(Token(type=TokenType.IntLit, value=self.buffer))
+                    self.buffer = ""
+            elif self.peek() == "'":
+                self.consume()
+                if isalnum(self.peek(1)):
+                    raise ValueError("Char must only be one character")
+                self.buffer = self.consume()
+                if not self.peek() or self.peek() != "'":
+                    raise ValueError("Expected ' to end char")
+                self.consume()
+                self.tokens.append(Token(type=TokenType.CharLit, value=self.buffer))
+                self.buffer = ""
+            elif self.peek() == '"':
+                self.consume()
+                while self.peek() and self.peek() != '"':
+                    self.buffer += self.consume()
+                if not self.peek() or self.peek() != '"':
+                    raise ValueError("Expected \" to end str")
+                self.consume()
+                self.tokens.append(Token(type=TokenType.StrLit, value=self.buffer))
+                self.buffer = ""
+            else:
+                self.check_symbols()
+
+        self.index = 0
+        return self.tokens
