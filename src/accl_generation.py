@@ -1,60 +1,80 @@
-from accl_parser import NodeProgram, NodeStmt, NodeExpr, NodeExprIntLit, NodeStmtExit, NodeStmtLet, NodeExprIdentifier, \
-    NodeExprFloatLit, NodeExprCharLit, NodeExprStrLit, NodeExprFStrLit, NodeExprBoolLit, NodeStmtPrint, NodeStmtError
+from accl_parser import Node
 import io
 
+
 class Var:
-    def __init__(self, stackloc: int):
+    def __init__(self, stackloc: int) -> None:
         self.stackloc: int = stackloc
 
+
 class Generator:
-    def __init__(self, program: NodeProgram):
-        self.program: NodeProgram = program
+    def __init__(self, program: Node.Program) -> None:
+        self.program: Node.Program = program
 
-        self.data = io.StringIO()
-        self.text = io.StringIO()
+        self.data: io.StringIO = io.StringIO()
+        self.text: io.StringIO = io.StringIO()
 
-        self.output = io.StringIO()
+        self.output: io.StringIO = io.StringIO()
 
         self.stack_size: int = 0
+
         self.float_amount: int = 0
         self.string_amount: int = 0
         self.fstring_amount: int = 0
         self.char_amount: int = 0
+
         self.vars: list = []
         self.var_values: list = []
 
         self.print_amount: int = 0
-        self.hold_identifier_value = None
+        self.hold_ident_value = None
 
-    # Expr visitors
-    def visit_expr_int_lit(self, expr_int_lit: NodeExprIntLit):
-        self.text.write(f"    mov rax, {expr_int_lit.int_lit.Value}\n")
+    # Push and Pop
+    def push(self, reg: str) -> None:
+        self.text.write(f"    push {reg}\n\n")
+        self.stack_size += 1
+
+    def pop(self, reg: str) -> None:
+        self.text.write(f"    pop {reg}\n")
+        self.stack_size -= 1
+
+    def push_float(self, reg: str) -> None:
+        self.text.write(f"    sub rsp, 8\n")
+        self.text.write(f"    mov QWORD [rsp], {reg}\n")
+        self.stack_size += 1
+
+    # Expr Visitors
+    def visit_expr_int_lit(self, expr_int_lit: Node.ExprIntLit) -> None:
+        self.text.write(f"    mov rax, {expr_int_lit.int_lit.value}\n")
         self.push("rax")
-    def visit_expr_float_lit(self, expr_float_lit: NodeExprFloatLit):
-        label = f"float_{self.float_amount}"
+
+    def visit_expr_float_lit(self, expr_float_lit: Node.ExprFloatLit) -> None:
+        label: str = f"float_{self.float_amount}"
         self.float_amount += 1
 
-        self.data.write(f"    {label} dq {expr_float_lit.float_lit.Value}\n")
+        self.data.write(f"    {label} dq {expr_float_lit.float_lit.value}\n")
         self.text.write(f"    mov rax, QWORD [{label}]\n")
         self.push_float("rax")
-    def visit_expr_char_lit(self, expr_char_lit: NodeExprCharLit):
-        char_value = expr_char_lit.char_lit.Value
+
+    def visit_expr_char_lit(self, expr_char_lit: Node.ExprCharLit) -> None:
+        char_value = expr_char_lit.char_lit.value
         label = f"char_{self.char_amount}"
         self.char_amount += 1
 
         self.data.write(f'    {label} db "{char_value}", 0\n')
         self.text.write(f"    lea rax, [{label}]\n")
         self.push("rax")
-    def visit_expr_str_lit(self, expr_str_lit: NodeExprStrLit):
+
+    def visit_expr_str_lit(self, expr_str_lit: Node.ExprStrLit) -> None:
         label = f"string_{self.string_amount}"
         self.string_amount += 1
-        string_list = list(expr_str_lit.str_lit.Value)
+        string_list = list(expr_str_lit.str_lit.value)
         value_list = []
         a = i = 0
         if '\\' in string_list:
             while i <= len(string_list):
                 try:
-                    if string_list[i] == '\\' and string_list[i+1] == 'n':
+                    if string_list[i] == '\\' and string_list[i + 1] == 'n':
                         del string_list[i]
                         del string_list[i]
                         value_list.append(''.join(string_list[a:i]))
@@ -73,14 +93,15 @@ class Generator:
         self.data.write(" 0\n")
         self.text.write(f"    lea rax, [{label}]\n")
         self.push("rax")
-    def visit_expr_fstr_lit(self, expr_fstr_lit: NodeExprFStrLit):
-        label = f"string_{self.fstring_amount}" # TODO FINISH FSTRING
+
+    def visit_expr_fstr_lit(self, expr_fstr_lit: Node.ExprFStrLit) -> None:
+        label = f"string_{self.fstring_amount}"  # TODO FINISH FSTRING
         self.fstring_amount += 1
-        fstring_list = list(expr_fstr_lit.fstr_lit.Value)
+        fstring_list = list(expr_fstr_lit.fstr_lit.value)
         new_string_list = []
 
         if '{' in fstring_list:
-            pass # TODO VISIT_EXPR_FSTR_LIT
+            pass  # TODO VISIT_EXPR_FSTR_LIT
         else:
             for i in range(0, len(fstring_list)):
                 new_string_list.append(fstring_list[i])
@@ -109,68 +130,79 @@ class Generator:
         self.data.write(" 0\n")
         self.text.write(f"    lea rax, [{label}]\n")
         self.push("rax")
-    def visit_expr_bool_lit(self, expr_bool_lit: NodeExprBoolLit):
-        if expr_bool_lit.bool_lit.Value == "True": psh: str = "1"
-        else: psh: str = "0"
+
+    def visit_expr_bool_lit(self, expr_bool_lit: Node.ExprBoolLit) -> None:
+        if expr_bool_lit.bool_lit.value == "True":
+            psh: str = "1"
+        else:
+            psh: str = "0"
         self.text.write(f"    mov rax, {psh}\n")
         self.push("rax")
-    def visit_expr_identifier(self, expr_identifier: NodeExprIdentifier) -> str or None: # type: ignore
+
+    def visit_expr_ident(self, expr_ident: Node.ExprIdent) -> str:  # type: ignore
         isin: bool = False
         for i in range(0, len(self.vars)):
-            if expr_identifier.identifier.Value in self.vars[i]:
+            if expr_ident.ident.value in self.vars[i]:
                 isin = True
                 var: Var = Var(i)
                 offset: str = f"QWORD [rsp + {(self.stack_size - var.stackloc - 1) * 8}]"
                 self.push(offset)
                 return self.var_values[i]
         if isin is False:
-            raise ValueError(f"Undeclared Identifier: {expr_identifier.identifier.Value}")
+            raise ValueError(f"Undeclared Ident: {expr_ident.ident.value}")
 
-    # Stmt visitors
-    def visit_stmt_exit(self, stmt_exit: NodeStmtExit):
+    # Stmt Visitors
+    def visit_stmt_exit(self, stmt_exit: Node.StmtExit) -> None:
         self.gen_expr(stmt_exit.expr)
         self.text.write("    mov rax, 60\n")
         self.pop("rdi")
         self.text.write("    syscall\n\n")
-    def visit_stmt_let(self, stmt_let: NodeStmtLet):
+
+    def visit_stmt_let(self, stmt_let: Node.StmtLet) -> None:
         expr_type = type(stmt_let.expr.var).__name__
         for i in range(0, len(self.vars)):
-            if stmt_let.identifier.Value in self.vars[i]: raise Exception(f"Identifier Already Used: {stmt_let.identifier.Value}")
-        self.vars.append([stmt_let.identifier.Value,Var(stackloc= self.stack_size)])
-        if expr_type == 'NodeExprIntLit': self.var_values.append(stmt_let.expr.var.int_lit.Value)
-        elif expr_type == 'NodeExprFloatLit': self.var_values.append(stmt_let.expr.var.float_lit.Value)
-        elif expr_type == 'NodeExprCharLit': self.var_values.append(stmt_let.expr.var.char_lit.Value)
-        elif expr_type == 'NodeExprStrLit': self.var_values.append(stmt_let.expr.var.str_lit.Value)
-        elif expr_type == 'NodeExprBoolLit': self.var_values.append(stmt_let.expr.var.bool_lit.Value)
-        elif expr_type == 'NodeExprIdentifier':
-            value: str = self.visit_expr_identifier(stmt_let.expr.var)
+            if stmt_let.ident.value in self.vars[i]: raise Exception(f"Ident Already Used: {stmt_let.ident.value}")
+        self.vars.append([stmt_let.ident.value, Var(stackloc=self.stack_size)])
+        if expr_type == 'ExprIntLit':
+            self.var_values.append(stmt_let.expr.var.int_lit.value)
+        elif expr_type == 'ExprFloatLit':
+            self.var_values.append(stmt_let.expr.var.float_lit.value)
+        elif expr_type == 'ExprCharLit':
+            self.var_values.append(stmt_let.expr.var.char_lit.value)
+        elif expr_type == 'ExprStrLit':
+            self.var_values.append(stmt_let.expr.var.str_lit.value)
+        elif expr_type == 'ExprBoolLit':
+            self.var_values.append(stmt_let.expr.var.bool_lit.value)
+        elif expr_type == 'ExprIdent':
+            value: str = self.visit_expr_ident(stmt_let.expr.var)
             self.var_values.append(value)
         self.gen_expr(stmt_let.expr)
-    def visit_stmt_print(self, stmt_print: NodeStmtPrint):
+
+    def visit_stmt_print(self, stmt_print: Node.StmtPrint) -> None:
         expr_type = type(stmt_print.expr.var).__name__
         label = f"print_{self.print_amount}"
         self.print_amount += 1
 
-        if expr_type == 'NodeExprIntLit':
-            int_value = stmt_print.expr.var.int_lit.Value
+        if expr_type == 'ExprIntLit':
+            int_value = stmt_print.expr.var.int_lit.value
 
             self.data.write(f'    {label} db "{int_value}", 0xa, 0\n')
             self.text.write(f"    lea rax, [{label}]\n")
             self.push("rax")
-        elif expr_type == 'NodeExprFloatLit':
-            float_value = stmt_print.expr.var.float_lit.Value
+        elif expr_type == 'ExprFloatLit':
+            float_value = stmt_print.expr.var.float_lit.value
 
             self.data.write(f'    {label} db "{float_value}", 0xa, 0\n')
             self.text.write(f"    lea rax, [{label}]\n")
             self.push("rax")
-        elif expr_type == 'NodeExprCharLit':
-            char_value = stmt_print.expr.var.char_lit.Value
+        elif expr_type == 'ExprCharLit':
+            char_value = stmt_print.expr.var.char_lit.value
 
             self.data.write(f'    {label} db "{char_value}", 0xa, 0\n')
             self.text.write(f"    lea rax, [{label}]\n")
             self.push("rax")
-        elif expr_type == 'NodeExprStrLit':
-            string_list = list(stmt_print.expr.var.str_lit.Value)
+        elif expr_type == 'ExprStrLit':
+            string_list = list(stmt_print.expr.var.str_lit.value)
             value_list = []
             a = i = 0
             if '\\' in string_list:
@@ -195,35 +227,35 @@ class Generator:
             self.data.write(" 0\n")
             self.text.write(f"    lea rax, [{label}]\n")
             self.push("rax")
-        elif expr_type == 'NodeExprFStrLit':
-            pass # TODO PRINT FSTRING
-        elif expr_type == 'NodeExprBoolLit':
-            bool_value = stmt_print.expr.var.bool_lit.Value
+        elif expr_type == 'ExprFStrLit':
+            pass  # TODO PRINT FSTRING
+        elif expr_type == 'ExprBoolLit':
+            bool_value = stmt_print.expr.var.bool_lit.value
 
             self.data.write(f'    {label} db "{bool_value}", 0xa, 0\n')
             self.text.write(f"    lea rax, [{label}]\n")
             self.push("rax")
-        elif expr_type == 'NodeExprIdentifier':
-            identifier_list = list(self.visit_expr_identifier(stmt_print.expr.var))
+        elif expr_type == 'ExprIdent':
+            ident_list = list(self.visit_expr_ident(stmt_print.expr.var))
             newline_amount = 0
             value_list = []
             a = i = 0
-            if '\\' in identifier_list:
-                while i <= len(identifier_list):
+            if '\\' in ident_list:
+                while i <= len(ident_list):
                     try:
-                        if identifier_list[i] == '\\' and identifier_list[i+1] == 'n':
-                            del identifier_list[i]
-                            del identifier_list[i]
-                            value_list.append(''.join(identifier_list[a:i]))
+                        if ident_list[i] == '\\' and ident_list[i + 1] == 'n':
+                            del ident_list[i]
+                            del ident_list[i]
+                            value_list.append(''.join(ident_list[a:i]))
                             newline_amount += 1
                             a = i
                             i -= 1
                     except:
-                        value_list.append(''.join(identifier_list[a:i]))
+                        value_list.append(''.join(ident_list[a:i]))
                         break
                     i += 1
             else:
-                value_list.append(''.join(identifier_list))
+                value_list.append(''.join(ident_list))
 
             self.data.write(f'    {label} db ')
             for value in value_list:
@@ -240,7 +272,8 @@ class Generator:
         self.text.write("    mov rax, 1\n")
         self.text.write("    mov rdi, 1\n")
         self.text.write("    syscall\n\n")
-    def visit_stmt_error(self, stmt_error: NodeStmtError):
+
+    def visit_stmt_error(self, stmt_error: Node.StmtError) -> None:
         self.gen_expr(stmt_error.errmessage)
         self.pop("rsi")
 
@@ -254,29 +287,31 @@ class Generator:
         self.pop("rdi")
         self.text.write("    syscall\n\n")
 
-    # Visitor Dictionaries
+    # Visitor Dicts
     expr_visitor: dict = {
-        'NodeExprIntLit': visit_expr_int_lit,
-        'NodeExprFloatLit': visit_expr_float_lit,
-        'NodeExprCharLit': visit_expr_char_lit,
-        'NodeExprStrLit': visit_expr_str_lit,
-        'NodeExprFStrLit': visit_expr_fstr_lit,
-        'NodeExprBoolLit': visit_expr_bool_lit,
-        'NodeExprIdentifier': visit_expr_identifier
+        'ExprIntLit': visit_expr_int_lit,
+        'ExprFloatLit': visit_expr_float_lit,
+        'ExprCharLit': visit_expr_char_lit,
+        'ExprStrLit': visit_expr_str_lit,
+        'ExprFStrLit': visit_expr_fstr_lit,
+        'ExprBoolLit': visit_expr_bool_lit,
+        'ExprIdent': visit_expr_ident
     }
 
     stmt_visitor: dict = {
-        'NodeStmtExit': visit_stmt_exit,
-        'NodeStmtLet': visit_stmt_let,
-        'NodeStmtPrint': visit_stmt_print,
-        'NodeStmtError': visit_stmt_error
+        'StmtExit': visit_stmt_exit,
+        'StmtLet': visit_stmt_let,
+        'StmtPrint': visit_stmt_print,
+        'StmtError': visit_stmt_error
     }
 
     # Generators
-    def gen_expr(self, expr: NodeExpr):
+    def gen_expr(self, expr: Node.Expr) -> None:
         self.expr_visitor[type(expr.var).__name__](self, expr.var)
-    def gen_stmt(self, stmt: NodeStmt):
+
+    def gen_stmt(self, stmt: Node.Stmt) -> None:
         self.stmt_visitor[type(stmt.var).__name__](self, stmt.var)
+
     def gen_prog(self) -> str:
         self.data.write("section .data\n")
 
@@ -316,15 +351,3 @@ class Generator:
         self.output.write(self.text.getvalue())
 
         return self.output.getvalue()
-
-    # Push and Pop
-    def push(self, reg: str):
-        self.text.write(f"    push {reg}\n\n")
-        self.stack_size += 1
-    def pop(self, reg: str):
-        self.text.write(f"    pop {reg}\n")
-        self.stack_size -= 1
-    def push_float(self, reg: str):
-        self.text.write(f"    sub rsp, 8\n")
-        self.text.write(f"    mov QWORD [rsp], {reg}\n")
-        self.stack_size += 1

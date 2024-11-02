@@ -1,9 +1,9 @@
 from accl_generation import Generator
-from accl_parser import Parser, NodeProgram
+from accl_parser import Parser, Node
 from accl_tokenizer import Tokenizer, Token
 import sys
-
-# sys.argv.append('../main.accl')
+import os
+import subprocess as s
 
 def main():
     if len(sys.argv) != 2:
@@ -14,21 +14,21 @@ def main():
     tokenizer: Tokenizer = Tokenizer(contents)
     tokens: list[Token] = tokenizer.tokenize()
 
-    print(tokens, '\n\n')
-
     parser: Parser = Parser(tokens)
-    program: NodeProgram or None = parser.parse_program() # type: ignore
-
-    print(program)
-
-    if not program:
-        raise Exception("Invalid program")
+    program: Node.Program = parser.parse_program() # type: ignore
 
     generator: Generator = Generator(program)
 
     file = open("./output/out.asm", 'w')
     file.write(generator.gen_prog())
     file.close()
+
+    os.system("nasm -felf64 ./output/out.asm -o ./output/out.o")
+    os.system(f"gcc -static -nostdlib -m64 ./output/out.o -o ./{sys.argv[1].removesuffix('.accl')}")
+    os.system("rm -rf ./output")
+    print("Running program . . .\n")
+    result = s.run(f"./{sys.argv[1].removesuffix('.accl')}")
+    print(f"Program exited with code: {result.returncode}")
 
 if __name__ == "__main__":
     main()

@@ -1,4 +1,3 @@
 let hello: str = "Hello, World!";
-let x: int = 0;
-error(hello, x);
-exit EXIT_SUCCESS;
+print(hello);
+exit 12;
