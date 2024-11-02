@@ -6,6 +6,7 @@
 testing.py
 
 src/output/
+src/__pycache__
 output/
 .idea/
 .vscode/
